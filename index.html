@@ -569,22 +569,23 @@ function tryDirectDownload(){
     data.forEach(d=>{
         csv+=`"${d.ID}","${d.Acción}","${d.Aplicativo}","${impLabels[d.impacto_n]}","${esfLabels[d.esfuerzo_n]}","${d.Estado}","${getQuad(d)}"\n`;
     });
+
+    // Usar Data URI en vez de Blob — se abre inmediatamente sin recargar
+    const encoded = encodeURIComponent('\uFEFF' + csv);
+    const dataUri = 'data:text/csv;charset=utf-8,' + encoded;
+
     try {
-        const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
-        const url = URL.createObjectURL(blob);
-        // Intentar abrir en nueva pestaña
-        const w = window.open(url, '_blank');
+        const w = window.open(dataUri, '_blank');
         if(!w){
-            // Si popup bloqueado, usar método de link
+            // Si popup bloqueado, usar link con data URI
             const a = document.createElement('a');
-            a.href = url;
+            a.href = dataUri;
             a.download = 'aris_gartner_export.csv';
             a.target = '_blank';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
         }
-        setTimeout(()=>URL.revokeObjectURL(url), 5000);
     } catch(e){
         alert('Descarga bloqueada por el navegador.\nUsa el botón "Copiar al Portapapeles" y pega en Excel.');
     }
