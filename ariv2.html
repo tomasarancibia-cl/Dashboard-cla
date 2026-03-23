@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Mapa ARIs - Impacto vs Esfuerzo</title>
+<style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;padding:0;color:#333}
+    .navbar{display:flex;align-items:center;justify-content:space-between;background:#1896d3;padding:12px 24px;border-bottom:2px solid #1896d3;box-shadow:0 2px 8px rgba(0,0,0,.08);position:sticky;top:0;z-index:100}
+    .nav-logo{height:40px;width:auto;object-fit:contain}
+    .nav-logo-pwc{height:70px;width:auto;object-fit:contain}
+    .nav-title{font-size:20px;font-weight:bold;color:white;margin:0}
+    #uploadScreen,#dashboard{padding:20px}
+    h1{font-size:22px;margin-bottom:4px}
+    .panels{display:flex;gap:16px;flex-wrap:nowrap;align-items:stretch}
+    .panel{background:white;border-radius:10px;border:1px solid #ddd;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+    .panel-chart{flex:4;min-width:780px;overflow:hidden}
+    .panel-chart svg{width:100%;height:auto;display:block}
+    .panel-side{flex:1;min-width:340px;display:flex;flex-direction:column;overflow:hidden;max-height:780px}
+    .panel-side .filters{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+    .panel-side .filters input,.panel-side .filters select{width:100%;padding:6px 8px;border:1px solid #ccc;border-radius:6px;font-size:11px}
+    .panel-side .filters .row{display:flex;gap:4px}
+    .panel-side .filters .row>*{flex:1}
+    .panel-side .table-wrap{flex:1;overflow-y:auto;overflow-x:auto;scrollbar-width:thin;scrollbar-color:#1896d3 #f0f0f0}
+    .panel-side .table-wrap::-webkit-scrollbar{width:8px;height:8px}
+    .panel-side .table-wrap::-webkit-scrollbar-track{background:#f0f0f0;border-radius:10px}
+    .panel-side .table-wrap::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#1896d3,#1896d3);border-radius:10px;border:2px solid #f0f0f0}
+    .panel-side .table-wrap::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,#1896d3,#1896d3)}
+    .tooltip{position:absolute;background:white;padding:10px 14px;border:1px solid #555;border-radius:6px;display:none;font-size:12px;pointer-events:none;max-width:380px;box-shadow:3px 3px 12px rgba(0,0,0,.3);z-index:999;line-height:1.4}
+    table{border-collapse:collapse;width:100%;font-size:11px}
+    th,td{border:1px solid #ddd;padding:5px 7px;text-align:left}
+    th{background:#1896d3;color:white;position:sticky;top:0;z-index:2}
+    tr:nth-child(even){background:#f9f9f9}
+    tr:hover{background:#e8f0fe}
+    .app-tag{display:inline-block;background:#e8e8e8;color:#555;padding:1px 6px;border-radius:4px;font-size:9px;margin-top:2px}
+    .btn{padding:8px 18px;border-radius:6px;border:1px solid #aaa;background:#fff;cursor:pointer;font-weight:bold;font-size:12px;transition:background .2s}
+    .btn:hover{background:#f0f0f0}
+    .bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+    .grid-card{background:white;border-radius:10px;border:1px solid #ddd;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden}
+    .grid-card h3{font-size:14px;margin-bottom:12px;color:#333;display:flex;align-items:center;gap:6px}
+    .dict h3{margin:14px 0 6px;color:#333;font-size:14px;border-bottom:2px solid #c0392b;padding-bottom:4px}
+    .dict table th{background:#555}.dict table td:first-child{font-weight:bold;white-space:nowrap}
+    #changeLog{max-height:200px;overflow-y:auto;font-size:11px}
+    #changeLog div{padding:4px 8px;border-bottom:1px solid #eee}
+    #uploadScreen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;text-align:center}
+    #uploadScreen .desc{color:#666;font-size:14px;margin-bottom:30px;max-width:600px;line-height:1.6}
+    .upload-zone{width:500px;max-width:90vw;padding:60px 30px;border:3px dashed #aaa;border-radius:16px;background:#fafafa;cursor:pointer;transition:all .3s;position:relative}
+    .upload-zone:hover,.upload-zone.dragover{border-color:#c0392b;background:#fff5f5;transform:scale(1.02)}
+    .upload-zone .icon{font-size:64px;margin-bottom:12px}
+    .upload-zone .main-text{font-size:16px;font-weight:bold;color:#333}
+    .upload-zone .sub-text{font-size:12px;color:#999;margin-top:8px}
+    .upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+    #sheetSelector{margin-top:20px;display:none;text-align:center}
+    #sheetSelector select{padding:8px 16px;font-size:14px;border-radius:8px;border:1px solid #ccc}
+    #sheetSelector button{padding:8px 20px;font-size:14px;border-radius:8px;border:none;background:#c0392b;color:white;cursor:pointer;font-weight:bold;margin-left:10px}
+    #colMapper{margin-top:20px;display:none;background:white;padding:20px;border-radius:12px;border:1px solid #ddd;width:560px;max-width:90vw}
+    #colMapper h3{margin-bottom:12px}
+    #colMapper .map-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+    #colMapper .map-row label{width:120px;font-weight:bold;text-align:right;font-size:13px}
+    #colMapper .map-row select{flex:1;padding:6px;border-radius:6px;border:1px solid #ccc;font-size:13px}
+    #colMapper button{margin-top:14px;padding:10px 28px;font-size:14px;border-radius:8px;border:none;background:#27ae60;color:white;cursor:pointer;font-weight:bold}
+    #colMapper button:hover{background:#219a52}
+    .preview-box{margin-top:16px;max-height:180px;overflow:auto;font-size:11px;border:1px solid #ddd;border-radius:8px}
+    .preview-box table{margin:0}
+    #errorMsg{color:#c0392b;font-weight:bold;margin-top:12px;display:none}
+    #dashboard{display:none}
+    .estado-legend{display:flex;align-items:center;gap:14px;justify-content:center;margin-top:6px;font-size:11px;color:#555;flex-wrap:wrap}
+    .estado-legend .legend-item{display:flex;align-items:center;gap:4px}
+    .estado-legend .legend-dot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(0,0,0,.15)}
+    .filter-count{font-size:11px;color:#888;padding:2px 0}
+    .estado-tag{display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:bold;color:white}
+    .estado-backlog{background:#ef6c00}
+    .estado-pendiente{background:#f9a825;color:#333}
+    .estado-testeado{background:#7cb342}
+    .estado-implementado{background:#7cb342}
+    .estado-descartado{background:#c62828}
+    .ctx-menu{position:absolute;background:white;border:1px solid #ccc;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.2);z-index:1000;padding:6px 0;display:none;min-width:180px}
+    .ctx-menu div{padding:8px 16px;cursor:pointer;font-size:12px;font-weight:bold;transition:background .15s}
+    .ctx-menu div:hover{background:#f0f0f0}
+    .ctx-menu .ctx-title{padding:6px 16px;font-size:10px;color:#999;cursor:default;border-bottom:1px solid #eee}
+    .ctx-menu .ctx-title:hover{background:transparent}
+    .toggle-controls{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+    .toggle-mode-label{font-size:12px;font-weight:bold;color:#aaa;user-select:none;transition:color .3s}
+    .toggle-mode-label.active-estado{color:#1896d3}
+    .toggle-mode-label.active-heat{color:#ef6c00}
+    .toggle-switch{position:relative;display:inline-block;width:46px;height:24px;flex-shrink:0}
+    .toggle-switch input{opacity:0;width:0;height:0}
+    .toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#1896d3;border-radius:24px;transition:.3s}
+    .toggle-slider:before{content:"";position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+    .toggle-switch input:checked + .toggle-slider{background:#ef6c00}
+    .toggle-switch input:checked + .toggle-slider:before{transform:translateX(22px)}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+    <img src="logo-left.png" alt="Logo" class="nav-logo">
+    <h1 class="nav-title">Mapa ARIs — Impacto vs Esfuerzo</h1>
+    <img src="logo-right.png" alt="Logo" class="nav-logo nav-logo-pwc">
+</nav>
+
+<div id="uploadScreen">
+    <h1 style="font-size:24px">📊 Carga tu archivo Excel</h1>
+    <p class="desc">Carga tu archivo Excel (<b>.xlsx / .xls</b>) con las columnas de ARIs.<br>El sistema detectará las columnas automáticamente y generará el mapa interactivo con Drag&nbsp;&amp;&nbsp;Drop.</p>
+    <div class="upload-zone" id="dropZone">
+        <div class="icon">📊</div>
+        <div class="main-text">Arrastra tu Excel aquí o haz clic para seleccionar</div>
+        <div class="sub-text">Soporta .xlsx y .xls — Se procesa 100% en tu navegador</div>
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+    </div>
+    <div id="sheetSelector"><label><b>Hoja:</b></label><select id="sheetSelect"></select><button onclick="loadSelectedSheet()">Cargar hoja</button></div>
+    <div id="colMapper">
+        <h3>🔗 Mapeo de columnas</h3>
+        <p style="font-size:12px;color:#666;margin-bottom:14px">Verifica o ajusta la asignación de columnas:</p>
+        <div class="map-row"><label>ID (ej: ARI-01):</label><select id="mapID"></select></div>
+        <div class="map-row"><label>Acción:</label><select id="mapAccion"></select></div>
+        <div class="map-row"><label>Impacto:</label><select id="mapImpacto"></select></div>
+        <div class="map-row"><label>Esfuerzo:</label><select id="mapEsfuerzo"></select></div>
+        <div class="map-row"><label>Aplicativo:</label><select id="mapAplicativo"></select></div>
+        <div class="map-row"><label>Estado:</label><select id="mapEstado"></select></div>
+        <div style="margin-top:10px"><b>Vista previa (primeras 5 filas):</b><div class="preview-box" id="previewBox"></div></div>
+        <div id="errorMsg"></div>
+        <button onclick="buildDashboard()">🚀 Generar Mapa Interactivo</button>
+    </div>
+</div>
+
+<div id="dashboard">
+    <div class="panels">
+        <div class="panel panel-chart">
+            <div id="chart"></div>
+            <div class="estado-legend" id="legendEstado">
+                <span style="font-weight:bold">Estado:</span>
+                <div class="legend-item"><div class="legend-dot" style="background:#ef6c00"></div><span>Backlog</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#f9a825"></div><span>Pendiente</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#7cb342"></div><span>Testeado QA</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#7cb342;position:relative"><span style="position:absolute;top:-1px;left:2px;font-size:8px;color:white">✓</span></div><span>Implementado PROD</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#c62828;position:relative"><span style="position:absolute;top:-1px;left:2px;font-size:8px;color:white">✕</span></div><span>Descartado</span></div>
+            </div>
+            <div class="estado-legend" id="legendHeatmap" style="display:none">
+                <span style="font-weight:bold">Intensidad:</span>
+                <div class="legend-item"><div class="legend-dot" style="background:#b71c1c"></div><span>Bajo impacto / Alto esfuerzo</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#f9a825"></div><span>Intermedio</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#1b5e20"></div><span>Alto impacto / Bajo esfuerzo</span></div>
+            </div>
+            <div class="toggle-controls">
+                <span class="toggle-mode-label active-estado" id="lblEstado">🏷️ Modo Estados</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="toggleMode">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-mode-label" id="lblHeatmap">🌡️ Mapa de Calor</span>
+            </div>
+            <div style="text-align:center;margin-top:10px">
+                <button class="btn" onclick="resetAll()">🔄 Reset posiciones</button>
+                <button class="btn" onclick="exportCSV()" style="margin-left:8px">📥 Exportar CSV</button>
+            </div>
+        </div>
+        <div class="panel panel-side">
+            <div class="filters">
+                <input type="text" id="search" placeholder="🔍 Buscar por número de ARI (ej: 14, 3, 52)...">
+                <div class="row">
+                    <select id="fImpacto"><option value="">Impacto: Todos</option><option>Bajo</option><option>Medio</option><option>Alto</option><option>Crítico</option></select>
+                    <select id="fEsfuerzo"><option value="">Esfuerzo: Todos</option><option>Bajo</option><option>Medio</option><option>Alto</option></select>
+                </div>
+                <div class="row">
+                    <select id="fAplicativo"><option value="">Aplicativo: Todos</option></select>
+                    <select id="fEstado"><option value="">Estado: Todos</option><option>Backlog</option><option>Pendiente</option><option>Testeado QA</option><option>Implementado PROD</option><option>Descartado</option></select>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                    <div class="filter-count" id="filterCount"></div>
+                    <div style="display:flex;gap:4px">
+                        <button id="btnClearFilters" class="btn" style="padding:4px 12px;font-size:10px;display:none" onclick="clearFilters()">✕ Limpiar</button>
+                        <button class="btn" style="padding:4px 12px;font-size:10px" onclick="location.reload()">📂 Otro Excel</button>
+                    </div>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table id="tbl"><tr><th>ID</th><th>Acción</th><th>Aplicativo</th><th>Imp.</th><th>Esf.</th><th>Estado</th></tr></table>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-grid">
+        <div class="grid-card"><h3>🥧 Distribución por Cuadrante</h3><div id="pieChart"></div></div>
+        <div class="grid-card"><h3>🥧 Distribución por Impacto</h3><div id="pieChart2"></div></div>
+        <div class="grid-card"><h3>📊 ARIs por Esfuerzo × Impacto</h3><div id="barChart"></div></div>
+        <div class="grid-card"><h3>🏷️ ARIs por Aplicativo</h3><div id="appChart"></div></div>
+        <div class="grid-card"><h3>📝 Historial de Cambios</h3><div id="changeLog"><div style="color:#999">Aún no hay cambios. Arrastra una burbuja.</div></div></div>
+        <div class="grid-card dict">
+            <h3>📖 Diccionario de Datos</h3>
+            <table><tr><th>Campo</th><th>Tipo</th><th>Valores</th><th>Descripción</th></tr>
+            <tr><td>ID</td><td>String</td><td>ARI-01…N</td><td>Identificador único</td></tr>
+            <tr><td>Acción</td><td>String</td><td>Texto libre</td><td>Descripción de la acción</td></tr>
+            <tr><td>Aplicativo</td><td>String</td><td>Motor FICO, Kafka…</td><td>Sistema o componente</td></tr>
+            <tr><td>Impacto</td><td>Categórico</td><td>Bajo·Medio·Alto·Crítico</td><td>Nivel de impacto</td></tr>
+            <tr><td>Esfuerzo</td><td>Categórico</td><td>Bajo·Medio·Alto</td><td>Esfuerzo de implementación</td></tr>
+            <tr><td>Estado</td><td>Categórico</td><td>Backlog·Pendiente·Testeado QA·Implementado PROD·Descartado</td><td>Estado actual de la ARI</td></tr>
+            <tr><td>Cuadrante</td><td>Derivado</td><td>Priorizar·Big Bet·Fill-in·Postergar</td><td>Clasificación automática</td></tr></table>
+            <h3 style="margin-top:16px">📐 Reglas de Cuadrante</h3>
+            <table><tr><th>Cuadrante</th><th>Regla</th><th>Significado</th></tr>
+            <tr><td style="color:#2e7d32;font-weight:bold">⚡ Priorizar</td><td>Impacto ≥ Alto AND Esfuerzo ≤ Medio</td><td>Ejecutar primero</td></tr>
+            <tr><td style="color:#ef6c00;font-weight:bold">🎯 Big Bet</td><td>Impacto ≥ Alto AND Esfuerzo ≥ Alto</td><td>Requiere inversión</td></tr>
+            <tr><td style="color:#f9a825;font-weight:bold">📋 Fill-in</td><td>Impacto ≤ Medio AND Esfuerzo ≤ Medio</td><td>Cuando haya tiempo</td></tr>
+            <tr><td style="color:#c62828;font-weight:bold">⏸ Postergar</td><td>Impacto ≤ Medio AND Esfuerzo ≥ Alto</td><td>Deprioritizar</td></tr></table>
+            <h3 style="margin-top:16px">🔢 Escalas</h3>
+            <table><tr><th>Impacto</th><th>Criterio</th></tr>
+            <tr><td>0 — Bajo</td><td>Mejora cosmética</td></tr><tr><td>1 — Medio</td><td>Mejora operativa medible</td></tr>
+            <tr><td>2 — Alto</td><td>Impacto directo en disponibilidad</td></tr><tr><td>3 — Crítico</td><td>Riesgo de caída total</td></tr></table>
+            <table style="margin-top:10px"><tr><th>Esfuerzo</th><th>Criterio</th></tr>
+            <tr><td>0 — Bajo</td><td>&lt;4 horas, sin deploy</td></tr><tr><td>1 — Medio</td><td>1-3 días, coordinación</td></tr>
+            <tr><td>2 — Alto</td><td>&gt;1 semana, cambio arquitectónico</td></tr></table>
+        </div>
+    </div>
+
+    <div class="ctx-menu" id="ctxMenu">
+        <div class="ctx-title">Cambiar estado:</div>
+        <div onclick="setEstado('Backlog')">🟠 Backlog</div>
+        <div onclick="setEstado('Pendiente')">🟡 Pendiente</div>
+        <div onclick="setEstado('Testeado QA')">🟢 Testeado QA</div>
+        <div onclick="setEstado('Implementado PROD')">✅ Implementado PROD</div>
+        <div onclick="setEstado('Descartado')" style="color:#c62828">✕ Descartado</div>
+    </div>
+</div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script>
+let workbook=null,sheetData=[],headers=[],data=[];
+const IMPACT_MAP={'bajo':0,'medio':1,'alto':2,'crítico':3,'critico':3,'critical':3,'high':2,'medium':1,'low':0};
+const EFFORT_MAP={'bajo':0,'medio':1,'alto':2,'high':2,'medium':1,'low':0};
+const dropZone=document.getElementById('dropZone'),fileInput=document.getElementById('fileInput');
+dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('dragover');});
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop',e=>{e.preventDefault();dropZone.classList.remove('dragover');if(e.dataTransfer.files.length)handleFile(e.dataTransfer.files[0]);});
+fileInput.addEventListener('change',e=>{if(e.target.files.length)handleFile(e.target.files[0]);});
+
+function handleFile(file){
+    const reader=new FileReader();
+    reader.onload=e=>{
+        workbook=XLSX.read(e.target.result,{type:'array'});
+        const names=workbook.SheetNames;
+        if(names.length===1)loadSheet(names[0]);
+        else{
+            const sel=document.getElementById('sheetSelect');sel.innerHTML='';
+            names.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;sel.appendChild(o);});
+            document.getElementById('sheetSelector').style.display='block';
+        }
+        dropZone.querySelector('.main-text').textContent='✅ '+file.name;
+        dropZone.querySelector('.sub-text').textContent=names.length+' hoja(s)';
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function loadSelectedSheet(){loadSheet(document.getElementById('sheetSelect').value);}
+
+function loadSheet(name){
+    const json=XLSX.utils.sheet_to_json(workbook.Sheets[name],{defval:''});
+    if(!json.length){showError('Hoja vacía.');return;}
+    sheetData=json;headers=Object.keys(json[0]);
+    document.getElementById('sheetSelector').style.display='none';
+    showColumnMapper();
+}
+
+function showColumnMapper(){
+    document.getElementById('colMapper').style.display='block';
+    [{id:'mapID',kw:['id','ari','#','num','número','codigo']},
+     {id:'mapAccion',kw:['acción','accion','action','descripción','descripcion']},
+     {id:'mapImpacto',kw:['impacto','impact','severity']},
+     {id:'mapEsfuerzo',kw:['esfuerzo','effort','complejidad']},
+     {id:'mapAplicativo',kw:['aplicativo','app','sistema','componente','módulo']},
+     {id:'mapEstado',kw:['estado','status','state','etapa','fase']}
+    ].forEach(f=>{
+        const sel=document.getElementById(f.id);
+        sel.innerHTML='<option value="">(no asignar)</option>';
+        headers.forEach(h=>{
+            const o=document.createElement('option');o.value=h;o.textContent=h;
+            const hl=h.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+            if(f.kw.some(k=>hl.includes(k)))o.selected=true;
+            sel.appendChild(o);
+        });
+    });
+    renderPreview();
+}
+
+function renderPreview(){
+    let html='<table><tr>';
+    headers.forEach(h=>html+=`<th>${h}</th>`);
+    html+='</tr>';
+    sheetData.slice(0,5).forEach(r=>{html+='<tr>';headers.forEach(h=>html+=`<td>${r[h]}</td>`);html+='</tr>';});
+    document.getElementById('previewBox').innerHTML=html+'</table>';
+}
+
+function showError(msg){
+    const el=document.getElementById('errorMsg');
+    el.textContent='⚠️ '+msg;el.style.display='block';
+    setTimeout(()=>el.style.display='none',6000);
+}
+
+const quadDefs={"Priorizar":{color:"#2e7d32",icon:"⚡"},"Big Bet":{color:"#ef6c00",icon:"🎯"},"Fill-in":{color:"#f9a825",icon:"📋"},"Postergar":{color:"#c62828",icon:"⏸"}};
+function getQuad(d){
+    if(d.impacto_n>=2&&d.esfuerzo_n<=1)return"Priorizar";
+    if(d.impacto_n>=2&&d.esfuerzo_n>=2)return"Big Bet";
+    if(d.impacto_n<=1&&d.esfuerzo_n<=1)return"Fill-in";
+    return"Postergar";
+}
+const impLabels=["Bajo","Medio","Alto","Crítico"],esfLabels=["Bajo","Medio","Alto","—"];
+
+/* ── COLORES POR ESTADO ── */
+const estadoFillColors={
+    'backlog':'#ef6c00',
+    'pendiente':'#f9a825',
+    'testeado':'#7cb342',
+    'implementado':'#7cb342',
+    'descartado':'#c62828'
+};
+
+function getEstadoCls(est){
+    const l=est.toLowerCase();
+    if(l.includes('testeado'))return 'testeado';
+    if(l.includes('implementado'))return 'implementado';
+    if(l.includes('descartado'))return 'descartado';
+    if(l.includes('pendiente'))return 'pendiente';
+    return 'backlog';
+}
+
+function getEstadoFillColor(d){return estadoFillColors[getEstadoCls(d.Estado)]||'#ef6c00';}
+
+/* ── Qué icono lleva el nodo según estado ── */
+function getNodeIcon(d){
+    const cls=getEstadoCls(d.Estado);
+    if(cls==='descartado') return '✕';
+    if(cls==='implementado') return '✓';
+    return null;
+}
+
+const heatBgColors=[
+    ['#b71c1c','#d84315','#ef6c00'],
+    ['#d84315','#f9a825','#7cb342'],
+    ['#ef6c00','#7cb342','#2e7d32'],
+    ['#e65100','#43a047','#1b5e20']
+];
+function getHeatmapNodeColor(d){
+    const impIdx=Math.max(0,Math.min(3,d.impacto_n));
+    const colIdx=2-Math.max(0,Math.min(2,d.esfuerzo_n));
+    return heatBgColors[impIdx][colIdx];
+}
+
+function isHeatmapMode(){return document.getElementById('toggleMode').checked;}
+function getNodeColor(d){return isHeatmapMode()?getHeatmapNodeColor(d):getEstadoFillColor(d);}
+
+function applyVisualMode(){
+    const heatOn=isHeatmapMode();
+    const lblEst=document.getElementById('lblEstado');
+    const lblHeat=document.getElementById('lblHeatmap');
+    lblEst.classList.remove('active-estado','active-heat');
+    lblHeat.classList.remove('active-estado','active-heat');
+    if(heatOn){lblHeat.classList.add('active-heat');}
+    else{lblEst.classList.add('active-estado');}
+    document.getElementById('legendEstado').style.display=heatOn?'none':'flex';
+    document.getElementById('legendHeatmap').style.display=heatOn?'flex':'none';
+    d3.selectAll('.heatmap-cell').transition().duration(400).attr('opacity',heatOn?0.16:0);
+    d3.selectAll('.node').each(function(d){
+        const color=getNodeColor(d);
+        d3.select(this).select('circle.node-fill')
+            .transition().duration(400)
+            .style('fill',color)
+            .style('stroke','none');
+    });
+}
+
+/* ── Actualiza el icono de un nodo (✕ o ✓ o número) ── */
+function updateNodeLabel(nodeEl, d){
+    const icon=getNodeIcon(d);
+    const textEl=d3.select(nodeEl).select('text.node-label');
+    if(icon){
+        textEl.text(icon).style('font-size','12px');
+    } else {
+        const s=d.ID.replace(/^ARI-/i,'').replace(/^0+/,'');
+        textEl.text(s.length<=3?s:d.ID.substring(0,3)).style('font-size','8px');
+    }
+}
+
+function buildDashboard(){
+    const colID=document.getElementById('mapID').value,
+          colAcc=document.getElementById('mapAccion').value,
+          colImp=document.getElementById('mapImpacto').value,
+          colEsf=document.getElementById('mapEsfuerzo').value,
+          colApp=document.getElementById('mapAplicativo').value,
+          colEst=document.getElementById('mapEstado').value;
+    if(!colID||!colAcc||!colImp||!colEsf){showError('Mapea al menos: ID, Acción, Impacto y Esfuerzo.');return;}
+    data=[];let skipped=0;
+    sheetData.forEach(row=>{
+        const id=String(row[colID]||'').trim(),acc=String(row[colAcc]||'').trim();
+        const impRaw=String(row[colImp]||'').trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+        const esfRaw=String(row[colEsf]||'').trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+        const app=colApp?String(row[colApp]||'Sin asignar').trim():'Sin asignar';
+        const est=colEst?String(row[colEst]||'Backlog').trim():'Backlog';
+        const impN=parseLevel(impRaw,IMPACT_MAP),esfN=parseLevel(esfRaw,EFFORT_MAP);
+        if(id===''||impN===null||esfN===null){skipped++;return;}
+        data.push({ID:id,Acción:acc,Impacto:impLabels[impN],Esfuerzo:esfLabels[esfN],impacto_n:impN,esfuerzo_n:esfN,Aplicativo:app,Estado:est,orig_impacto_n:impN,orig_esfuerzo_n:esfN});
+    });
+    if(!data.length){showError('No se pudieron parsear filas.');return;}
+    document.getElementById('uploadScreen').style.display='none';
+    document.getElementById('dashboard').style.display='block';
+
+    const apps=[...new Set(data.map(d=>d.Aplicativo))].sort();
+    const selApp=document.getElementById('fAplicativo');
+    selApp.innerHTML='<option value="">Aplicativo: Todos</option>';
+    apps.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;selApp.appendChild(o);});
+
+    document.getElementById('search').addEventListener('input',updateTable);
+    document.getElementById('fImpacto').addEventListener('change',updateTable);
+    document.getElementById('fEsfuerzo').addEventListener('change',updateTable);
+    document.getElementById('fAplicativo').addEventListener('change',updateTable);
+    document.getElementById('fEstado').addEventListener('change',updateTable);
+    document.getElementById('toggleMode').addEventListener('change',applyVisualMode);
+
+    updateTable();drawPies();drawBar();drawAppChart();drawChart();
+}
+
+function parseLevel(raw,map){
+    if(map[raw]!==undefined)return map[raw];
+    for(const w of raw.split(/[\s\/,;]+/)){if(map[w]!==undefined)return map[w];}
+    const n=parseInt(raw);
+    if(!isNaN(n)&&n>=0&&n<=Math.max(...Object.values(map)))return n;
+    return null;
+}
+
+function updateTable(){
+    const tbl=document.getElementById('tbl');
+    tbl.querySelectorAll('tr.dr').forEach(r=>r.remove());
+    const f=(document.getElementById('search').value||'').toLowerCase();
+    const fImp=document.getElementById('fImpacto').value;
+    const fEsf=document.getElementById('fEsfuerzo').value;
+    const fApp=document.getElementById('fAplicativo').value;
+    const fEst=document.getElementById('fEstado').value;
+    let count=0;
+    data.forEach(d=>{
+        const idNum=d.ID.replace(/\D/g,'');
+        if(f&&!idNum.includes(f))return;
+        if(fImp&&d.Impacto!==fImp)return;
+        if(fEsf&&d.Esfuerzo!==fEsf)return;
+        if(fApp&&d.Aplicativo!==fApp)return;
+        if(fEst&&!d.Estado.includes(fEst))return;
+        count++;
+        const eCls=getEstadoCls(d.Estado);
+        const tr=document.createElement('tr');tr.className='dr';
+        tr.innerHTML=`<td><b>${d.ID}</b></td><td>${d.Acción}</td><td><span class="app-tag">${d.Aplicativo}</span></td><td>${d.Impacto}</td><td>${d.Esfuerzo}</td><td><span class="estado-tag estado-${eCls}">${d.Estado}</span></td>`;
+        tbl.appendChild(tr);
+    });
+    document.getElementById('filterCount').textContent=`Mostrando ${count} de ${data.length} ARIs`;
+    const hasFilter=f||fImp||fEsf||fApp||fEst;
+    document.getElementById('btnClearFilters').style.display=hasFilter?'inline-block':'none';
+    updateChartVisibility();
+}
+
+function updateChartVisibility(){
+    const f=(document.getElementById('search').value||'').toLowerCase();
+    const fImp=document.getElementById('fImpacto').value;
+    const fEsf=document.getElementById('fEsfuerzo').value;
+    const fApp=document.getElementById('fAplicativo').value;
+    const fEst=document.getElementById('fEstado').value;
+    d3.selectAll('.node').each(function(d){
+        const idNum=d.ID.replace(/\D/g,'');
+        let visible=true;
+        if(f&&!idNum.includes(f))visible=false;
+        if(fImp&&d.Impacto!==fImp)visible=false;
+        if(fEsf&&d.Esfuerzo!==fEsf)visible=false;
+        if(fApp&&d.Aplicativo!==fApp)visible=false;
+        if(fEst&&!d.Estado.includes(fEst))visible=false;
+        d3.select(this).transition().duration(300).style('opacity',visible?1:0.08).style('pointer-events',visible?'all':'none');
+    });
+}
+
+function clearFilters(){
+    document.getElementById('search').value='';
+    document.getElementById('fImpacto').value='';
+    document.getElementById('fEsfuerzo').value='';
+    document.getElementById('fAplicativo').value='';
+    document.getElementById('fEstado').value='';
+    updateTable();
+}
+
+function drawPies(){
+    d3.select('#pieChart').html('');d3.select('#pieChart2').html('');
+    const c={"Priorizar":0,"Big Bet":0,"Fill-in":0,"Postergar":0};
+    data.forEach(d=>c[getQuad(d)]++);
+    drawPie('#pieChart',Object.entries(c).map(([k,v])=>({label:k,value:v,color:quadDefs[k].color})));
+    const ic={};data.forEach(d=>{ic[d.Impacto]=(ic[d.Impacto]||0)+1;});
+    const iC={"Bajo":"#c62828","Medio":"#f9a825","Alto":"#43a047","Crítico":"#1b5e20"};
+    drawPie('#pieChart2',Object.entries(ic).map(([k,v])=>({label:k,value:v,color:iC[k]||'#999'})));
+}
+
+function drawPie(sel,pd){
+    const cw=(document.querySelector(sel).parentElement.clientWidth-40);
+    const s=Math.min(300,cw),r=s*0.36;
+    const svg=d3.select(sel).append('svg').attr('width',s).attr('height',s);
+    const g=svg.append('g').attr('transform',`translate(${s/2},${s/2})`);
+    const pie=d3.pie().value(d=>d.value).sort(null);
+    const arc=d3.arc().innerRadius(r*0.35).outerRadius(r);
+    g.selectAll('path').data(pie(pd)).enter().append('path').attr('d',arc).attr('fill',d=>d.data.color).attr('stroke','white').attr('stroke-width',2);
+    g.selectAll('.plbl').data(pie(pd)).enter().append('text').attr('transform',d=>`translate(${arc.centroid(d)})`).attr('text-anchor','middle').style('font-size','11px').style('fill','white').style('font-weight','bold').text(d=>d.data.value>0?d.data.value:'');
+    const lg=svg.append('g').attr('transform',`translate(10,${s-18})`);
+    const lw=Math.floor(s/pd.length);
+    pd.forEach((p,i)=>{
+        lg.append('rect').attr('x',i*lw).attr('y',0).attr('width',10).attr('height',10).attr('fill',p.color).attr('rx',2);
+        lg.append('text').attr('x',i*lw+14).attr('y',9).style('font-size','9px').text(p.label);
+    });
+}
+
+function drawBar(){
+    d3.select('#barChart').html('');
+    const cw=document.querySelector('#barChart').parentElement.clientWidth-40;
+    const matrix={};["Bajo","Medio","Alto"].forEach(e=>{matrix[e]={"Bajo":0,"Medio":0,"Alto":0,"Crítico":0};});
+    data.forEach(d=>{const eL=esfLabels[d.esfuerzo_n];if(matrix[eL])matrix[eL][d.Impacto]++;});
+    const groups=["Bajo","Medio","Alto"],subs=["Bajo","Medio","Alto","Crítico"];
+    const sC={"Bajo":"#c62828","Medio":"#f9a825","Alto":"#43a047","Crítico":"#1b5e20"};
+    const bw=Math.min(580,cw),bh=280,mg={top:20,right:100,bottom:35,left:45};
+    const iw=bw-mg.left-mg.right,ih=bh-mg.top-mg.bottom;
+    const svg=d3.select('#barChart').append('svg').attr('width',bw).attr('height',bh);
+    const gg=svg.append('g').attr('transform',`translate(${mg.left},${mg.top})`);
+    const x0=d3.scaleBand().domain(groups).range([0,iw]).padding(.3);
+    const x1=d3.scaleBand().domain(subs).range([0,x0.bandwidth()]).padding(.05);
+    const mx=d3.max(groups,gr=>d3.max(subs,s=>matrix[gr][s]))||1;
+    const yy=d3.scaleLinear().domain([0,mx+2]).range([ih,0]);
+    gg.append('g').attr('transform',`translate(0,${ih})`).call(d3.axisBottom(x0).tickFormat(d=>'Esf: '+d));
+    gg.append('g').call(d3.axisLeft(yy).ticks(5));
+    groups.forEach(gr=>{subs.forEach(s=>{
+        const v=matrix[gr][s];
+        gg.append('rect').attr('x',x0(gr)+x1(s)).attr('y',yy(v)).attr('width',x1.bandwidth()).attr('height',ih-yy(v)).attr('fill',sC[s]).attr('rx',2);
+        if(v>0)gg.append('text').attr('x',x0(gr)+x1(s)+x1.bandwidth()/2).attr('y',yy(v)-3).attr('text-anchor','middle').style('font-size','10px').style('font-weight','bold').text(v);
+    });});
+    const leg=svg.append('g').attr('transform',`translate(${bw-mg.right+10},${mg.top})`);
+    subs.forEach((s,i)=>{
+        leg.append('rect').attr('x',0).attr('y',i*20).attr('width',12).attr('height',12).attr('fill',sC[s]).attr('rx',2);
+        leg.append('text').attr('x',18).attr('y',i*20+11).style('font-size','11px').text('Imp: '+s);
+    });
+}
+
+function drawAppChart(){
+    d3.select('#appChart').html('');
+    const cw=document.querySelector('#appChart').parentElement.clientWidth-40;
+    const appCount={};data.forEach(d=>{const base=d.Aplicativo.split('/')[0].trim();appCount[base]=(appCount[base]||0)+1;});
+    const sorted=Object.entries(appCount).sort((a,b)=>b[1]-a[1]);
+    const bw=Math.min(700,cw),rowH=22,mg={top:10,right:40,bottom:10,left:160};
+    const bh=mg.top+mg.bottom+sorted.length*rowH;
+    const iw=bw-mg.left-mg.right;
+    const svg=d3.select('#appChart').append('svg').attr('width',bw).attr('height',bh);
+    const gg=svg.append('g').attr('transform',`translate(${mg.left},${mg.top})`);
+    const x=d3.scaleLinear().domain([0,d3.max(sorted,d=>d[1])+1]).range([0,iw]);
+    const y=d3.scaleBand().domain(sorted.map(d=>d[0])).range([0,sorted.length*rowH]).padding(.15);
+    const colors=d3.scaleOrdinal(d3.schemeTableau10);
+    sorted.forEach(([app,cnt],i)=>{
+        gg.append('rect').attr('x',0).attr('y',y(app)).attr('width',x(cnt)).attr('height',y.bandwidth()).attr('fill',colors(i)).attr('rx',3);
+        gg.append('text').attr('x',x(cnt)+4).attr('y',y(app)+y.bandwidth()/2+4).style('font-size','11px').style('font-weight','bold').text(cnt);
+        gg.append('text').attr('x',-6).attr('y',y(app)+y.bandwidth()/2+4).attr('text-anchor','end').style('font-size','10px').text(app);
+    });
+}
+
+const changes=[];
+function logChange(d,oldQ,newQ){
+    changes.unshift({time:new Date().toLocaleTimeString(),id:d.ID,from:oldQ,to:newQ,app:d.Aplicativo,est:d.Estado,type:'quad'});
+    renderChangeLog();
+}
+function renderChangeLog(){
+    const cl=document.getElementById('changeLog');cl.innerHTML='';
+    changes.forEach(c=>{
+        if(c.type==='estado'){
+            cl.innerHTML+=`<div><b>${c.time}</b> — <b>${c.id}</b> Estado: <span class="estado-tag estado-${getEstadoCls(c.from)}">${c.from}</span> → <span class="estado-tag estado-${getEstadoCls(c.to)}">${c.to}</span></div>`;
+        } else {
+            cl.innerHTML+=`<div><b>${c.time}</b> — <b>${c.id}</b> [${c.app}]: <span style="color:${quadDefs[c.from]?.color||'#333'}">${c.from}</span> → <span style="color:${quadDefs[c.to]?.color||'#333'}">${c.to}</span></div>`;
+        }
+    });
+}
+
+function refreshAll(){
+    data.forEach(d=>{d.Impacto=impLabels[d.impacto_n];d.Esfuerzo=esfLabels[d.esfuerzo_n];});
+    updateTable();drawPies();drawBar();drawAppChart();
+}
+
+function resetAll(){
+    data.forEach(d=>{d.impacto_n=d.orig_impacto_n;d.esfuerzo_n=d.orig_esfuerzo_n;});
+    clearFilters();refreshAll();d3.select('#chart').html('');drawChart();
+}
+
+function exportCSV(){
+    let csv='\uFEFFID,Acción,Aplicativo,Impacto,Esfuerzo,Estado,Cuadrante\n';
+    data.forEach(d=>{csv+=`"${d.ID}","${d.Acción}","${d.Aplicativo}","${impLabels[d.impacto_n]}","${esfLabels[d.esfuerzo_n]}","${d.Estado}","${getQuad(d)}"\n`;});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+    a.download='aris_gartner_export.csv';a.click();
+}
+
+let ctxTarget=null;
+const ctxMenu=document.getElementById('ctxMenu');
+document.addEventListener('click',()=>{ctxMenu.style.display='none';});
+
+function setEstado(newEst){
+    if(!ctxTarget)return;
+    const oldEst=ctxTarget.Estado;
+    ctxTarget.Estado=newEst;
+    ctxMenu.style.display='none';
+    d3.selectAll('.node').each(function(dd){
+        if(dd===ctxTarget){
+            const color=getNodeColor(dd);
+            d3.select(this).select('circle.node-fill')
+                .transition().duration(400)
+                .style('fill',color)
+                .style('stroke','none');
+            updateNodeLabel(this, dd);
+        }
+    });
+    changes.unshift({time:new Date().toLocaleTimeString(),id:ctxTarget.ID,from:oldEst,to:newEst,app:ctxTarget.Aplicativo,est:newEst,type:'estado'});
+    renderChangeLog();
+    updateTable();
+}
+
+function drawChart(){
+    const container=document.querySelector('.panel-chart');
+    const W=container.clientWidth-32,H=680;
+    const margin={top:40,right:40,bottom:55,left:70};
+    const iW=W-margin.left-margin.right,iH=H-margin.top-margin.bottom;
+    const heatOn=isHeatmapMode();
+
+    const svg=d3.select('#chart').append('svg')
+        .attr('viewBox',`0 0 ${W} ${H}`)
+        .attr('preserveAspectRatio','xMidYMid meet')
+        .style('width','100%').style('height','auto');
+
+    const g=svg.append('g').attr('transform',`translate(${margin.left},${margin.top})`);
+    const xScale=d3.scaleLinear().domain([2.6,-0.6]).range([0,iW]);
+    const yScale=d3.scaleLinear().domain([-0.6,3.6]).range([iH,0]);
+
+    const heatCols=3,heatRows=4,cellW=iW/heatCols,cellH=iH/heatRows;
+    for(let row=0;row<heatRows;row++){
+        for(let col=0;col<heatCols;col++){
+            const impIdx=heatRows-1-row;
+            const color=heatBgColors[impIdx][col];
+            const isTop=row===0,isBot=row===heatRows-1,isLeft=col===0,isRight=col===heatCols-1;
+            const rx=(isTop&&isLeft)||(isTop&&isRight)||(isBot&&isLeft)||(isBot&&isRight)?8:0;
+            g.append('rect')
+                .attr('class','heatmap-cell')
+                .attr('x',col*cellW).attr('y',row*cellH)
+                .attr('width',cellW).attr('height',cellH)
+                .attr('fill',color)
+                .attr('opacity',heatOn?0.16:0)
+                .attr('rx',rx);
+        }
+    }
+
+    for(let c=1;c<heatCols;c++)
+        g.append('line').attr('x1',c*cellW).attr('x2',c*cellW).attr('y1',0).attr('y2',iH).attr('stroke','#aaa').attr('stroke-dasharray','6,4').attr('opacity',.4);
+    for(let r=1;r<heatRows;r++)
+        g.append('line').attr('x1',0).attr('x2',iW).attr('y1',r*cellH).attr('y2',r*cellH).attr('stroke','#aaa').attr('stroke-dasharray','6,4').attr('opacity',.4);
+
+    g.append('g').attr('transform',`translate(0,${iH})`).call(d3.axisBottom(xScale).tickValues([2,1,0]).tickFormat(v=>["Bajo","Medio","Alto"][v])).selectAll('text').style('font-size','12px').style('font-weight','bold');
+    g.append('g').call(d3.axisLeft(yScale).tickValues([0,1,2,3]).tickFormat((_,i)=>["Bajo","Medio","Alto","Crítico"][i])).selectAll('text').style('font-size','12px').style('font-weight','bold');
+
+    [0,1,2].forEach(v=>{g.append('line').attr('x1',xScale(v)).attr('x2',xScale(v)).attr('y1',0).attr('y2',iH).attr('stroke','#ddd').attr('stroke-width',.5);});
+    [0,1,2,3].forEach(v=>{g.append('line').attr('x1',0).attr('x2',iW).attr('y1',yScale(v)).attr('y2',yScale(v)).attr('stroke','#ddd').attr('stroke-width',.5);});
+
+    svg.append('text').attr('x',W/2).attr('y',H-6).attr('text-anchor','middle').style('font-size','13px').style('font-weight','bold').style('fill','#555').text('← Esfuerzo');
+    svg.append('text').attr('transform','rotate(-90)').attr('x',-H/2).attr('y',16).attr('text-anchor','middle').style('font-size','13px').style('font-weight','bold').style('fill','#555').text('Impacto →');
+
+    const R=13;
+    data.forEach(d=>{
+        d.fx_target=xScale(d.esfuerzo_n);
+        d.fy_target=yScale(d.impacto_n);
+        d.x=d.fx_target+(Math.random()-0.5)*40;
+        d.y=d.fy_target+(Math.random()-0.5)*40;
+    });
+
+    const sim=d3.forceSimulation(data)
+        .force('x',d3.forceX(d=>d.fx_target).strength(0.8))
+        .force('y',d3.forceY(d=>d.fy_target).strength(0.8))
+        .force('collide',d3.forceCollide(R+1).iterations(15)).stop();
+    for(let i=0;i<800;i++)sim.tick();
+
+    const tip=d3.select('body').append('div').attr('class','tooltip');
+    function snap(v,mx){return Math.max(0,Math.min(mx,Math.round(v)));}
+    function toSVG(e){
+        const svgEl=svg.node(),pt=svgEl.createSVGPoint();
+        pt.x=e.clientX;pt.y=e.clientY;
+        return pt.matrixTransform(g.node().getScreenCTM().inverse());
+    }
+
+    let activeSim=null;
+
+    const drag=d3.drag()
+        .on('start',function(e,d){
+            if(activeSim)activeSim.stop();
+            d._oldQuad=getQuad(d);
+            d3.select(this).raise().select('circle.node-fill')
+                .transition().duration(200).ease(d3.easeBackOut)
+                .attr('r',R+6)
+                .style('filter','drop-shadow(0 3px 6px rgba(0,0,0,0.4))');
+        })
+        .on('drag',function(e,d){
+            const p=toSVG(e.sourceEvent);
+            const nx=Math.max(0,Math.min(iW,p.x)),ny=Math.max(0,Math.min(iH,p.y));
+            d.x=nx;d.y=ny;
+            d3.select(this).attr('transform',`translate(${nx},${ny})`);
+            const sI=snap(yScale.invert(ny),3),sE=snap(xScale.invert(nx),2);
+
+            if(isHeatmapMode()){
+                const tempImp=Math.max(0,Math.min(3,sI));
+                const tempColIdx=2-Math.max(0,Math.min(2,sE));
+                const dragColor=heatBgColors[tempImp][tempColIdx];
+                d3.select(this).select('circle.node-fill').style('fill',dragColor);
+            }
+
+            tip.style('display','block')
+                .html(`<b>${d.ID}</b> <span class="app-tag">${d.Aplicativo}</span><br>Impacto: <b>${impLabels[sI]}</b> · Esfuerzo: <b>${esfLabels[sE]}</b>`)
+                .style('left',(e.sourceEvent.pageX+15)+'px').style('top',(e.sourceEvent.pageY-10)+'px');
+        })
+        .on('end',function(e,d){
+            tip.style('display','none');
+            d.esfuerzo_n=snap(xScale.invert(d.x),2);
+            d.impacto_n=snap(yScale.invert(d.y),3);
+            const newQ=getQuad(d);
+            if(d._oldQuad!==newQ)logChange(d,d._oldQuad,newQ);
+            data.forEach(dd=>{dd.fx_target=xScale(dd.esfuerzo_n);dd.fy_target=yScale(dd.impacto_n);});
+
+            const newColor=getNodeColor(d);
+            d3.select(this).select('circle.node-fill')
+                .transition().duration(300)
+                .attr('r',R)
+                .style('fill',newColor)
+                .style('stroke','none')
+                .style('filter','drop-shadow(0 1px 2px rgba(0,0,0,0.25))');
+
+            activeSim=d3.forceSimulation(data)
+                .force('x',d3.forceX(dd=>dd.fx_target).strength(0.3))
+                .force('y',d3.forceY(dd=>dd.fy_target).strength(0.3))
+                .force('collide',d3.forceCollide(R+1).iterations(15))
+                .alpha(0.8).alphaDecay(0.02)
+                .on('tick',()=>{
+                    g.selectAll('.node').attr('transform',dd=>`translate(${dd.x},${dd.y})`);
+                });
+            refreshAll();
+        });
+
+    const nodes=g.selectAll('.node').data(data).enter().append('g')
+        .attr('class','node')
+        .attr('transform',d=>`translate(${d.x},${d.y})`)
+        .style('cursor','grab')
+        .call(drag);
+
+    /* Sombra */
+    nodes.append('circle').attr('r',R+1).attr('fill','rgba(0,0,0,0.1)').attr('cx',1).attr('cy',1);
+
+    /* Círculo principal */
+    nodes.append('circle')
+        .attr('class','node-fill')
+        .attr('r',R)
+        .style('fill',d=>getNodeColor(d))
+        .style('stroke','none')
+        .style('filter','drop-shadow(0 1px 2px rgba(0,0,0,0.25))');
+
+    /* Texto/Icono del nodo */
+    nodes.append('text')
+        .attr('class','node-label')
+        .attr('text-anchor','middle').attr('dy','0.35em')
+        .style('fill','white').style('font-weight','bold').style('pointer-events','none')
+        .each(function(d){
+            const icon=getNodeIcon(d);
+            if(icon){
+                d3.select(this).text(icon).style('font-size','12px');
+            } else {
+                const s=d.ID.replace(/^ARI-/i,'').replace(/^0+/,'');
+                d3.select(this).text(s.length<=3?s:d.ID.substring(0,3)).style('font-size','8px');
+            }
+        });
+
+    nodes.on('mouseover',function(e,d){
+        const eCls=getEstadoCls(d.Estado);
+        tip.style('display','block')
+            .html(`<b style="font-size:14px">${d.ID}</b> <span class="estado-tag estado-${eCls}">${d.Estado}</span><br><span class="app-tag">${d.Aplicativo}</span><br><br>${d.Acción}<br><br><b>Impacto:</b> ${d.Impacto} · <b>Esfuerzo:</b> ${d.Esfuerzo}<br><span style="color:#999;font-size:10px">🖱️ Arrastra · Click derecho = cambiar estado</span>`);
+        d3.select(this).select('circle.node-fill').transition().duration(150).attr('r',R+4);
+    })
+    .on('mousemove',(e)=>{tip.style('left',(e.pageX+15)+'px').style('top',(e.pageY-10)+'px');})
+    .on('mouseout',function(){
+        tip.style('display','none');
+        d3.select(this).select('circle.node-fill').transition().duration(150).attr('r',R);
+    });
+
+    nodes.on('contextmenu',function(e,d){
+        e.preventDefault();
+        ctxTarget=d;
+        ctxMenu.style.display='block';
+        ctxMenu.style.left=(e.pageX)+'px';
+        ctxMenu.style.top=(e.pageY)+'px';
+    });
+
+    updateChartVisibility();
+    applyVisualMode();
+}
+</script>
+</body>
+</html>
