@@ -82,6 +82,24 @@
     .toggle-slider:before{content:"";position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
     .toggle-switch input:checked + .toggle-slider{background:#ef6c00}
     .toggle-switch input:checked + .toggle-slider:before{transform:translateX(22px)}
+
+    /* ── MODAL EXPORTAR CSV (para Looker iframe) ── */
+    .export-modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s}
+    .export-modal{background:white;border-radius:14px;padding:28px;max-width:650px;width:92%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.4);animation:slideUp .3s}
+    .export-modal h3{margin-bottom:6px;font-size:18px;color:#333}
+    .export-modal .subtitle{font-size:12px;color:#888;margin-bottom:16px}
+    .export-modal textarea{flex:1;min-height:280px;font-family:'Courier New',monospace;font-size:11px;padding:10px;border:1px solid #ccc;border-radius:8px;resize:vertical;background:#fafafa}
+    .export-modal .btn-row{display:flex;gap:8px;margin-top:14px;justify-content:flex-end;flex-wrap:wrap}
+    .export-modal .btn-row button{padding:10px 20px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:13px;transition:all .2s}
+    .export-modal .btn-copy{background:#1896d3;color:white}
+    .export-modal .btn-copy:hover{background:#1477ab}
+    .export-modal .btn-download{background:#27ae60;color:white}
+    .export-modal .btn-download:hover{background:#219a52}
+    .export-modal .btn-close{background:#eee;color:#555}
+    .export-modal .btn-close:hover{background:#ddd}
+    .export-modal .copy-success{color:#27ae60;font-size:12px;font-weight:bold;display:none;margin-top:8px}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes slideUp{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
 </style>
 </head>
 <body>
@@ -145,7 +163,7 @@
             </div>
             <div style="text-align:center;margin-top:10px">
                 <button class="btn" onclick="resetAll()"> Reset todo</button>
-                <button class="btn" onclick="exportCSV()" style="margin-left:8px">Exportar CSV</button>
+                <button class="btn" onclick="exportCSV()" style="margin-left:8px">Exportar / Copiar CSV</button>
             </div>
         </div>
         <div class="panel panel-side">
@@ -451,12 +469,130 @@ function resetAll(){
     drawChart();
 }
 
+/* ══════════════════════════════════════════════════════════
+   EXPORT CSV — Compatible con iframe de Looker Studio
+   ══════════════════════════════════════════════════════════ */
 function exportCSV(){
-    let csv='\uFEFFID,Acción,Aplicativo,Impacto,Esfuerzo,Estado,Cuadrante\n';
-    data.forEach(d=>{csv+=`"${d.ID}","${d.Acción}","${d.Aplicativo}","${impLabels[d.impacto_n]}","${esfLabels[d.esfuerzo_n]}","${d.Estado}","${getQuad(d)}"\n`;});
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
-    a.download='aris_gartner_export.csv';a.click();
+    let csv='ID,Acción,Aplicativo,Impacto,Esfuerzo,Estado,Cuadrante\n';
+    data.forEach(d=>{
+        csv+=`"${d.ID}","${d.Acción}","${d.Aplicativo}","${impLabels[d.impacto_n]}","${esfLabels[d.esfuerzo_n]}","${d.Estado}","${getQuad(d)}"\n`;
+    });
+
+    const inIframe = (window !== window.top);
+
+    // Si NO estamos en iframe → descarga directa normal
+    if(!inIframe){
+        try {
+            const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'aris_gartner_export.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            return;
+        } catch(e){}
+    }
+
+    // Si estamos en iframe (Looker) → mostrar modal con opciones
+    showExportModal(csv);
+}
+
+function showExportModal(csv){
+    // Remover modal anterior si existe
+    const prev = document.getElementById('exportModalOverlay');
+    if(prev) prev.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'exportModalOverlay';
+    overlay.className = 'export-modal-overlay';
+    overlay.innerHTML = `
+        <div class="export-modal">
+            <h3> Exportar Datos CSV</h3>
+            <p class="subtitle">${data.length} ARIs · Selecciona todo con Ctrl+A y copia con Ctrl+C, o usa los botones:</p>
+            <textarea id="csvTextArea" readonly>${csv}</textarea>
+            <div class="copy-success" id="copySuccess"> ¡Copiado al portapapeles! Pega en Excel con Ctrl+V</div>
+            <div class="btn-row">
+                <button class="btn-copy" onclick="copyCSVtoClipboard()"> Copiar al Portapapeles</button>
+                <button class="btn-download" onclick="tryDirectDownload()">Intentar Descarga</button>
+                <button class="btn-close" onclick="closeExportModal()">✕ Cerrar</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+
+    // Click fuera del modal para cerrar
+    overlay.addEventListener('click', function(e){
+        if(e.target === overlay) closeExportModal();
+    });
+
+    // Seleccionar texto automáticamente
+    setTimeout(()=>{
+        document.getElementById('csvTextArea').select();
+    }, 100);
+}
+
+function copyCSVtoClipboard(){
+    const textarea = document.getElementById('csvTextArea');
+    const csv = textarea.value;
+
+    // Intentar API moderna de clipboard
+    if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(csv).then(()=>{
+            showCopySuccess();
+        }).catch(()=>{
+            fallbackCopy(textarea);
+        });
+    } else {
+        fallbackCopy(textarea);
+    }
+}
+
+function fallbackCopy(textarea){
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+    try {
+        document.execCommand('copy');
+        showCopySuccess();
+    } catch(e){
+        alert('No se pudo copiar automáticamente.\nUsa Ctrl+A y luego Ctrl+C manualmente.');
+    }
+}
+
+function showCopySuccess(){
+    const msg = document.getElementById('copySuccess');
+    msg.style.display = 'block';
+    setTimeout(()=>{ msg.style.display = 'none'; }, 4000);
+}
+
+function tryDirectDownload(){
+    let csv='ID,Acción,Aplicativo,Impacto,Esfuerzo,Estado,Cuadrante\n';
+    data.forEach(d=>{
+        csv+=`"${d.ID}","${d.Acción}","${d.Aplicativo}","${impLabels[d.impacto_n]}","${esfLabels[d.esfuerzo_n]}","${d.Estado}","${getQuad(d)}"\n`;
+    });
+    try {
+        const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+        const url = URL.createObjectURL(blob);
+        // Intentar abrir en nueva pestaña
+        const w = window.open(url, '_blank');
+        if(!w){
+            // Si popup bloqueado, usar método de link
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'aris_gartner_export.csv';
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+        setTimeout(()=>URL.revokeObjectURL(url), 5000);
+    } catch(e){
+        alert('Descarga bloqueada por el navegador.\nUsa el botón "Copiar al Portapapeles" y pega en Excel.');
+    }
+}
+
+function closeExportModal(){
+    const overlay = document.getElementById('exportModalOverlay');
+    if(overlay) overlay.remove();
 }
 
 let ctxTarget=null;
@@ -631,7 +767,7 @@ function drawChart(){
     nodes.on('mouseover',function(e,d){
         const eCls=getEstadoCls(d.Estado);
         tip.style('display','block')
-            .html(`<b style="font-size:14px">${d.ID}</b> <span class="estado-tag estado-${eCls}">${d.Estado}</span><br><span class="app-tag">${d.Aplicativo}</span><br><br>${d.Acción}<br><br><b>Impacto:</b> ${d.Impacto} · <b>Esfuerzo:</b> ${d.Esfuerzo}<br><span style="color:#999;font-size:10px">🖱️ Arrastra · Click derecho = cambiar estado</span>`);
+            .html(`<b style="font-size:14px">${d.ID}</b> <span class="estado-tag estado-${eCls}">${d.Estado}</span><br><span class="app-tag">${d.Aplicativo}</span><br><br>${d.Acción}<br><br><b>Impacto:</b> ${d.Impacto} · <b>Esfuerzo:</b> ${d.Esfuerzo}<br><span style="color:#999;font-size:10px"> Arrastra · Click derecho = cambiar estado</span>`);
         d3.select(this).select('circle.node-fill').transition().duration(150).attr('r',R+4);
     })
     .on('mousemove',(e)=>{tip.style('left',(e.pageX+15)+'px').style('top',(e.pageY-10)+'px');})
