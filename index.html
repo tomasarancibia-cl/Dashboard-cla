@@ -570,24 +570,65 @@ function tryDirectDownload(){
         csv+=`"${d.ID}","${d.Acción}","${d.Aplicativo}","${impLabels[d.impacto_n]}","${esfLabels[d.esfuerzo_n]}","${d.Estado}","${getQuad(d)}"\n`;
     });
 
-    // Usar Data URI en vez de Blob — se abre inmediatamente sin recargar
-    const encoded = encodeURIComponent('\uFEFF' + csv);
-    const dataUri = 'data:text/csv;charset=utf-8,' + encoded;
+    // Crear HTML que se auto-descarga al abrir
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Descargando CSV...</title>
+        <style>
+            body{font-family:'Segoe UI',Arial,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f0f2f5;margin:0}
+            .box{text-align:center;background:white;padding:40px 60px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
+            .spinner{width:40px;height:40px;border:4px solid #eee;border-top:4px solid #1896d3;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px}
+            @keyframes spin{to{transform:rotate(360deg)}}
+            h2{color:#333;margin-bottom:8px}
+            p{color:#888;font-size:14px}
+            .success{color:#27ae60;font-weight:bold;display:none}
+        </style>
+    </head>
+    <body>
+        <div class="box">
+            <div class="spinner" id="sp"></div>
+            <h2> Descargando CSV...</h2>
+            <p>El archivo se descargará automáticamente.</p>
+            <p class="success" id="ok"> ¡Descarga completa! Puedes cerrar esta pestaña.</p>
+        </div>
+        <script>
+            (function(){
+                var csv = decodeURIComponent("${encodeURIComponent('\uFEFF' + csv)}");
+                var blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'aris_gartner_export.csv';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(function(){
+                    document.getElementById('sp').style.display='none';
+                    document.getElementById('ok').style.display='block';
+                }, 1000);
+            })();
+        <\/script>
+    </body>
+    </html>`;
 
     try {
-        const w = window.open(dataUri, '_blank');
+        const blob = new Blob([htmlContent], {type:'text/html;charset=utf-8'});
+        const url = URL.createObjectURL(blob);
+        const w = window.open(url, '_blank');
         if(!w){
-            // Si popup bloqueado, usar link con data URI
+            // Fallback si popup bloqueado
             const a = document.createElement('a');
-            a.href = dataUri;
-            a.download = 'aris_gartner_export.csv';
+            a.href = url;
             a.target = '_blank';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
         }
+        setTimeout(()=>URL.revokeObjectURL(url), 10000);
     } catch(e){
-        alert('Descarga bloqueada por el navegador.\nUsa el botón "Copiar al Portapapeles" y pega en Excel.');
+        alert('Descarga bloqueada.\nUsa el botón "Copiar al Portapapeles" y pega en Excel.');
     }
 }
 
