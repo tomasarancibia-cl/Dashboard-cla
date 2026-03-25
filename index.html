@@ -16,7 +16,7 @@
     .panel{background:white;border-radius:10px;border:1px solid #ddd;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
     .panel-chart{flex:4;min-width:780px;overflow:hidden}
     .panel-chart svg{width:100%;height:auto;display:block}
-    .panel-side{flex:1;min-width:340px;display:flex;flex-direction:column;overflow:hidden;max-height:780px}
+    .panel-side{flex:1;min-width:400px;display:flex;flex-direction:column;overflow:hidden;max-height:780px}
     .panel-side .filters{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
     .panel-side .filters input,.panel-side .filters select{width:100%;padding:6px 8px;border:1px solid #ccc;border-radius:6px;font-size:11px}
     .panel-side .filters .row{display:flex;gap:4px}
@@ -26,13 +26,14 @@
     .panel-side .table-wrap::-webkit-scrollbar-track{background:#f0f0f0;border-radius:10px}
     .panel-side .table-wrap::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#1896d3,#1896d3);border-radius:10px;border:2px solid #f0f0f0}
     .panel-side .table-wrap::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,#1896d3,#1896d3)}
-    .tooltip{position:absolute;background:white;padding:10px 14px;border:1px solid #555;border-radius:6px;display:none;font-size:12px;pointer-events:none;max-width:380px;box-shadow:3px 3px 12px rgba(0,0,0,.3);z-index:999;line-height:1.4}
+    .tooltip{position:absolute;background:white;padding:10px 14px;border:1px solid #555;border-radius:6px;display:none;font-size:12px;pointer-events:none;max-width:420px;box-shadow:3px 3px 12px rgba(0,0,0,.3);z-index:999;line-height:1.4}
     table{border-collapse:collapse;width:100%;font-size:11px}
     th,td{border:1px solid #ddd;padding:5px 7px;text-align:left}
-    th{background:#1896d3;color:white;position:sticky;top:0;z-index:2}
+    th{background:#1896d3;color:white;position:sticky;top:0;z-index:2;white-space:nowrap}
     tr:nth-child(even){background:#f9f9f9}
     tr:hover{background:#e8f0fe}
     .app-tag{display:inline-block;background:#e8e8e8;color:#555;padding:1px 6px;border-radius:4px;font-size:9px;margin-top:2px}
+    .tipo-tag{display:inline-block;background:#e1bee7;color:#6a1b9a;padding:1px 6px;border-radius:4px;font-size:9px;margin-top:2px}
     .btn{padding:8px 18px;border-radius:6px;border:1px solid #aaa;background:#fff;cursor:pointer;font-weight:bold;font-size:12px;transition:background .2s}
     .btn:hover{background:#f0f0f0}
     #uploadScreen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;text-align:center}
@@ -49,7 +50,7 @@
     #colMapper{margin-top:20px;display:none;background:white;padding:20px;border-radius:12px;border:1px solid #ddd;width:560px;max-width:90vw}
     #colMapper h3{margin-bottom:12px}
     #colMapper .map-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-    #colMapper .map-row label{width:120px;font-weight:bold;text-align:right;font-size:13px}
+    #colMapper .map-row label{width:140px;font-weight:bold;text-align:right;font-size:13px}
     #colMapper .map-row select{flex:1;padding:6px;border-radius:6px;border:1px solid #ccc;font-size:13px}
     #colMapper button{margin-top:14px;padding:10px 28px;font-size:14px;border-radius:8px;border:none;background:#27ae60;color:white;cursor:pointer;font-weight:bold}
     #colMapper button:hover{background:#219a52}
@@ -62,16 +63,21 @@
     .estado-legend .legend-dot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(0,0,0,.15)}
     .filter-count{font-size:11px;color:#888;padding:2px 0}
     .estado-tag{display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:bold;color:white}
+    .estado-descartada{background:#c62828}
     .estado-backlog{background:#ef6c00}
-    .estado-pendiente{background:#f9a825;color:#333}
-    .estado-testeado{background:#7cb342}
-    .estado-implementado{background:#2e7d32}
-    .estado-descartado{background:#c62828}
-    .ctx-menu{position:absolute;background:white;border:1px solid #ccc;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.2);z-index:1000;padding:6px 0;display:none;min-width:180px}
+    .estado-desarrollo{background:#f9a825;color:#333}
+    .estado-entregada{background:#7cb342}
+    .estado-coordinacion{background:#43a047}
+    .estado-testeo{background:#2e7d32}
+    .estado-implementada{background:#1b5e20}
+    .estado-homologacion{background:#00695c}
+    .ctx-menu{position:absolute;background:white;border:1px solid #ccc;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.2);z-index:1000;padding:6px 0;display:none;min-width:220px}
     .ctx-menu div{padding:8px 16px;cursor:pointer;font-size:12px;font-weight:bold;transition:background .15s}
     .ctx-menu div:hover{background:#f0f0f0}
     .ctx-menu .ctx-title{padding:6px 16px;font-size:10px;color:#999;cursor:default;border-bottom:1px solid #eee}
     .ctx-menu .ctx-title:hover{background:transparent}
+    .ctx-menu .ctx-separator{padding:2px 16px;font-size:9px;color:#bbb;cursor:default;border-top:1px solid #eee;margin-top:2px}
+    .ctx-menu .ctx-separator:hover{background:transparent}
     .toggle-controls{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:10px;flex-wrap:wrap}
     .toggle-mode-label{font-size:12px;font-weight:bold;color:#aaa;user-select:none;transition:color .3s}
     .toggle-mode-label.active-estado{color:#1896d3}
@@ -83,7 +89,6 @@
     .toggle-switch input:checked + .toggle-slider{background:#ef6c00}
     .toggle-switch input:checked + .toggle-slider:before{transform:translateX(22px)}
 
-    /* ── MODAL EXPORTAR CSV (para Looker iframe) ── */
     .export-modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s}
     .export-modal{background:white;border-radius:14px;padding:28px;max-width:650px;width:92%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.4);animation:slideUp .3s}
     .export-modal h3{margin-bottom:6px;font-size:18px;color:#333}
@@ -129,6 +134,7 @@
         <div class="map-row"><label>Esfuerzo:</label><select id="mapEsfuerzo"></select></div>
         <div class="map-row"><label>Aplicativo:</label><select id="mapAplicativo"></select></div>
         <div class="map-row"><label>Estado:</label><select id="mapEstado"></select></div>
+        <div class="map-row"><label>Tipo:</label><select id="mapTipo"></select></div>
         <div style="margin-top:10px"><b>Vista previa (primeras 5 filas):</b><div class="preview-box" id="previewBox"></div></div>
         <div id="errorMsg"></div>
         <button onclick="buildDashboard()">Generar Mapa Interactivo</button>
@@ -141,11 +147,14 @@
             <div id="chart"></div>
             <div class="estado-legend" id="legendEstado">
                 <span style="font-weight:bold">Estado:</span>
+                <div class="legend-item"><div class="legend-dot" style="background:#c62828"></div><span>Descartada</span></div>
                 <div class="legend-item"><div class="legend-dot" style="background:#ef6c00"></div><span>Backlog</span></div>
-                <div class="legend-item"><div class="legend-dot" style="background:#f9a825"></div><span>Pendiente</span></div>
-                <div class="legend-item"><div class="legend-dot" style="background:#7cb342"></div><span>Testeado QA</span></div>
-                <div class="legend-item"><div class="legend-dot" style="background:#2e7d32"></div><span>Implementado PROD</span></div>
-                <div class="legend-item"><div class="legend-dot" style="background:#c62828"></div><span>Descartado</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#f9a825"></div><span>Desarrollo</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#7cb342"></div><span>Entregada</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#43a047"></div><span>Coordinación CLA</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#2e7d32"></div><span>Testeo QA</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#1b5e20"></div><span>Implementada</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#00695c;border-style:dashed"></div><span>Homologación Prod CLA</span></div>
             </div>
             <div class="estado-legend" id="legendHeatmap" style="display:none">
                 <span style="font-weight:bold">Intensidad:</span>
@@ -175,7 +184,20 @@
                 </div>
                 <div class="row">
                     <select id="fAplicativo"><option value="">Aplicativo: Todos</option></select>
-                    <select id="fEstado"><option value="">Estado: Todos</option><option>Backlog</option><option>Pendiente</option><option>Testeado QA</option><option>Implementado PROD</option><option>Descartado</option></select>
+                    <select id="fEstado">
+                        <option value="">Estado: Todos</option>
+                        <option>Descartada</option>
+                        <option>Backlog</option>
+                        <option>Desarrollo</option>
+                        <option>Entregada</option>
+                        <option>Coordinación CLA</option>
+                        <option>Testeo QA</option>
+                        <option>Implementada</option>
+                        <option>Homologación Prod CLA</option>
+                    </select>
+                </div>
+                <div class="row">
+                    <select id="fTipo"><option value="">Tipo: Todos</option></select>
                 </div>
                 <div style="display:flex;align-items:center;justify-content:space-between">
                     <div class="filter-count" id="filterCount"></div>
@@ -186,18 +208,22 @@
                 </div>
             </div>
             <div class="table-wrap">
-                <table id="tbl"><tr><th>ID</th><th>Acción</th><th>Aplicativo</th><th>Imp.</th><th>Esf.</th><th>Estado</th></tr></table>
+                <table id="tbl"><tr><th>ID</th><th>Acción</th><th>Aplicativo</th><th>Imp.</th><th>Esf.</th><th>Estado</th><th>Tipo</th></tr></table>
             </div>
         </div>
     </div>
 
     <div class="ctx-menu" id="ctxMenu">
         <div class="ctx-title">Cambiar estado:</div>
+        <div onclick="setEstado('Descartada')" style="color:#c62828">🔴 Descartada</div>
         <div onclick="setEstado('Backlog')">🟠 Backlog</div>
-        <div onclick="setEstado('Pendiente')">🟡 Pendiente</div>
-        <div onclick="setEstado('Testeado QA')">🟢 Testeado QA</div>
-        <div onclick="setEstado('Implementado PROD')">🟢 Implementado PROD</div>
-        <div onclick="setEstado('Descartado')" style="color:#c62828">🔴 Descartado</div>
+        <div onclick="setEstado('Desarrollo')">🟡 Desarrollo</div>
+        <div onclick="setEstado('Entregada')">🟢 Entregada</div>
+        <div onclick="setEstado('Coordinación CLA')">🟢 Coordinación CLA</div>
+        <div onclick="setEstado('Testeo QA')">🟢 Testeo QA</div>
+        <div onclick="setEstado('Implementada')">🟢 Implementada</div>
+        <div class="ctx-separator">── Opcional ──</div>
+        <div onclick="setEstado('Homologación Prod CLA')">🔷 Homologación Prod CLA</div>
     </div>
 </div>
 
@@ -247,7 +273,8 @@ function showColumnMapper(){
      {id:'mapImpacto',kw:['impacto','impact','severity']},
      {id:'mapEsfuerzo',kw:['esfuerzo','effort','complejidad']},
      {id:'mapAplicativo',kw:['aplicativo','app','sistema','componente','módulo']},
-     {id:'mapEstado',kw:['estado','status','state','etapa','fase']}
+     {id:'mapEstado',kw:['estado','status','state','etapa','fase']},
+     {id:'mapTipo',kw:['tipo','type','categoría','categoria','category','clase']}
     ].forEach(f=>{
         const sel=document.getElementById(f.id);
         sel.innerHTML='<option value="">(no asignar)</option>';
@@ -285,19 +312,25 @@ function getQuad(d){
 const impLabels=["Bajo","Medio","Alto","Crítico"],esfLabels=["Bajo","Medio","Alto","—"];
 
 const estadoFillColors={
-    'backlog':'#ef6c00',
-    'pendiente':'#f9a825',
-    'testeado':'#7cb342',
-    'implementado':'#2e7d32',
-    'descartado':'#c62828'
+    'descartada':  '#c62828',
+    'backlog':     '#ef6c00',
+    'desarrollo':  '#f9a825',
+    'entregada':   '#7cb342',
+    'coordinacion':'#43a047',
+    'testeo':      '#2e7d32',
+    'implementada':'#1b5e20',
+    'homologacion':'#00695c'
 };
 
 function getEstadoCls(est){
-    const l=est.toLowerCase();
-    if(l.includes('testeado'))return 'testeado';
-    if(l.includes('implementado'))return 'implementado';
-    if(l.includes('descartado'))return 'descartado';
-    if(l.includes('pendiente'))return 'pendiente';
+    const l=est.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    if(l.includes('descartada')||l.includes('descartado'))return 'descartada';
+    if(l.includes('homologacion'))return 'homologacion';
+    if(l.includes('implementada')||l.includes('implementado'))return 'implementada';
+    if(l.includes('testeo'))return 'testeo';
+    if(l.includes('coordinacion'))return 'coordinacion';
+    if(l.includes('entregada')||l.includes('entregado'))return 'entregada';
+    if(l.includes('desarrollo'))return 'desarrollo';
     return 'backlog';
 }
 
@@ -349,7 +382,8 @@ function buildDashboard(){
           colImp=document.getElementById('mapImpacto').value,
           colEsf=document.getElementById('mapEsfuerzo').value,
           colApp=document.getElementById('mapAplicativo').value,
-          colEst=document.getElementById('mapEstado').value;
+          colEst=document.getElementById('mapEstado').value,
+          colTipo=document.getElementById('mapTipo').value;
     if(!colID||!colAcc||!colImp||!colEsf){showError('Mapea al menos: ID, Acción, Impacto y Esfuerzo.');return;}
     data=[];let skipped=0;
     sheetData.forEach(row=>{
@@ -358,24 +392,33 @@ function buildDashboard(){
         const esfRaw=String(row[colEsf]||'').trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
         const app=colApp?String(row[colApp]||'Sin asignar').trim():'Sin asignar';
         const est=colEst?String(row[colEst]||'Backlog').trim():'Backlog';
+        const tipo=colTipo?String(row[colTipo]||'Sin tipo').trim():'Sin tipo';
         const impN=parseLevel(impRaw,IMPACT_MAP),esfN=parseLevel(esfRaw,EFFORT_MAP);
         if(id===''||impN===null||esfN===null){skipped++;return;}
-        data.push({ID:id,Acción:acc,Impacto:impLabels[impN],Esfuerzo:esfLabels[esfN],impacto_n:impN,esfuerzo_n:esfN,Aplicativo:app,Estado:est,orig_impacto_n:impN,orig_esfuerzo_n:esfN,orig_Estado:est});
+        data.push({ID:id,Acción:acc,Impacto:impLabels[impN],Esfuerzo:esfLabels[esfN],impacto_n:impN,esfuerzo_n:esfN,Aplicativo:app,Estado:est,Tipo:tipo,orig_impacto_n:impN,orig_esfuerzo_n:esfN,orig_Estado:est});
     });
     if(!data.length){showError('No se pudieron parsear filas.');return;}
     document.getElementById('uploadScreen').style.display='none';
     document.getElementById('dashboard').style.display='block';
 
+    // Poblar filtro Aplicativo
     const apps=[...new Set(data.map(d=>d.Aplicativo))].sort();
     const selApp=document.getElementById('fAplicativo');
     selApp.innerHTML='<option value="">Aplicativo: Todos</option>';
     apps.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;selApp.appendChild(o);});
+
+    // Poblar filtro Tipo
+    const tipos=[...new Set(data.map(d=>d.Tipo))].sort();
+    const selTipo=document.getElementById('fTipo');
+    selTipo.innerHTML='<option value="">Tipo: Todos</option>';
+    tipos.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;selTipo.appendChild(o);});
 
     document.getElementById('search').addEventListener('input',updateTable);
     document.getElementById('fImpacto').addEventListener('change',updateTable);
     document.getElementById('fEsfuerzo').addEventListener('change',updateTable);
     document.getElementById('fAplicativo').addEventListener('change',updateTable);
     document.getElementById('fEstado').addEventListener('change',updateTable);
+    document.getElementById('fTipo').addEventListener('change',updateTable);
     document.getElementById('toggleMode').addEventListener('change',applyVisualMode);
 
     updateTable();drawChart();
@@ -389,48 +432,51 @@ function parseLevel(raw,map){
     return null;
 }
 
+function getFilterState(){
+    return {
+        f:(document.getElementById('search').value||'').toLowerCase(),
+        fImp:document.getElementById('fImpacto').value,
+        fEsf:document.getElementById('fEsfuerzo').value,
+        fApp:document.getElementById('fAplicativo').value,
+        fEst:document.getElementById('fEstado').value,
+        fTipo:document.getElementById('fTipo').value
+    };
+}
+
+function matchesFilters(d,fs){
+    const idNum=d.ID.replace(/\D/g,'');
+    if(fs.f&&!idNum.includes(fs.f))return false;
+    if(fs.fImp&&d.Impacto!==fs.fImp)return false;
+    if(fs.fEsf&&d.Esfuerzo!==fs.fEsf)return false;
+    if(fs.fApp&&d.Aplicativo!==fs.fApp)return false;
+    if(fs.fEst&&!d.Estado.includes(fs.fEst))return false;
+    if(fs.fTipo&&d.Tipo!==fs.fTipo)return false;
+    return true;
+}
+
 function updateTable(){
     const tbl=document.getElementById('tbl');
     tbl.querySelectorAll('tr.dr').forEach(r=>r.remove());
-    const f=(document.getElementById('search').value||'').toLowerCase();
-    const fImp=document.getElementById('fImpacto').value;
-    const fEsf=document.getElementById('fEsfuerzo').value;
-    const fApp=document.getElementById('fAplicativo').value;
-    const fEst=document.getElementById('fEstado').value;
+    const fs=getFilterState();
     let count=0;
     data.forEach(d=>{
-        const idNum=d.ID.replace(/\D/g,'');
-        if(f&&!idNum.includes(f))return;
-        if(fImp&&d.Impacto!==fImp)return;
-        if(fEsf&&d.Esfuerzo!==fEsf)return;
-        if(fApp&&d.Aplicativo!==fApp)return;
-        if(fEst&&!d.Estado.includes(fEst))return;
+        if(!matchesFilters(d,fs))return;
         count++;
         const eCls=getEstadoCls(d.Estado);
         const tr=document.createElement('tr');tr.className='dr';
-        tr.innerHTML=`<td><b>${d.ID}</b></td><td>${d.Acción}</td><td><span class="app-tag">${d.Aplicativo}</span></td><td>${d.Impacto}</td><td>${d.Esfuerzo}</td><td><span class="estado-tag estado-${eCls}">${d.Estado}</span></td>`;
+        tr.innerHTML=`<td><b>${d.ID}</b></td><td>${d.Acción}</td><td><span class="app-tag">${d.Aplicativo}</span></td><td>${d.Impacto}</td><td>${d.Esfuerzo}</td><td><span class="estado-tag estado-${eCls}">${d.Estado}</span></td><td><span class="tipo-tag">${d.Tipo}</span></td>`;
         tbl.appendChild(tr);
     });
     document.getElementById('filterCount').textContent=`Mostrando ${count} de ${data.length} ARIs`;
-    const hasFilter=f||fImp||fEsf||fApp||fEst;
+    const hasFilter=fs.f||fs.fImp||fs.fEsf||fs.fApp||fs.fEst||fs.fTipo;
     document.getElementById('btnClearFilters').style.display=hasFilter?'inline-block':'none';
     updateChartVisibility();
 }
 
 function updateChartVisibility(){
-    const f=(document.getElementById('search').value||'').toLowerCase();
-    const fImp=document.getElementById('fImpacto').value;
-    const fEsf=document.getElementById('fEsfuerzo').value;
-    const fApp=document.getElementById('fAplicativo').value;
-    const fEst=document.getElementById('fEstado').value;
+    const fs=getFilterState();
     d3.selectAll('.node').each(function(d){
-        const idNum=d.ID.replace(/\D/g,'');
-        let visible=true;
-        if(f&&!idNum.includes(f))visible=false;
-        if(fImp&&d.Impacto!==fImp)visible=false;
-        if(fEsf&&d.Esfuerzo!==fEsf)visible=false;
-        if(fApp&&d.Aplicativo!==fApp)visible=false;
-        if(fEst&&!d.Estado.includes(fEst))visible=false;
+        const visible=matchesFilters(d,fs);
         d3.select(this).transition().duration(300).style('opacity',visible?1:0.08).style('pointer-events',visible?'all':'none');
     });
 }
@@ -441,6 +487,7 @@ function clearFilters(){
     document.getElementById('fEsfuerzo').value='';
     document.getElementById('fAplicativo').value='';
     document.getElementById('fEstado').value='';
+    document.getElementById('fTipo').value='';
     updateTable();
 }
 
@@ -469,44 +516,42 @@ function resetAll(){
     drawChart();
 }
 
-/* ══════════════════════════════════════════════════════════
-   EXPORT CSV — Compatible con iframe de Looker Studio
-   ══════════════════════════════════════════════════════════ */
-function exportCSV(){
-    let csv='ID,Acción,Aplicativo,Impacto,Esfuerzo,Estado,Cuadrante\n';
+function buildCSV(){
+    let csv='ID,Acción,Aplicativo,Impacto,Esfuerzo,Estado,Tipo,Cuadrante\n';
     data.forEach(d=>{
-        csv+=`"${d.ID}","${d.Acción}","${d.Aplicativo}","${impLabels[d.impacto_n]}","${esfLabels[d.esfuerzo_n]}","${d.Estado}","${getQuad(d)}"\n`;
+        csv+=`"${d.ID}","${d.Acción}","${d.Aplicativo}","${impLabels[d.impacto_n]}","${esfLabels[d.esfuerzo_n]}","${d.Estado}","${d.Tipo}","${getQuad(d)}"\n`;
     });
+    return csv;
+}
 
-    const inIframe = (window !== window.top);
+function exportCSV(){
+    const csv=buildCSV();
+    const inIframe=(window!==window.top);
 
-    // Si NO estamos en iframe → descarga directa normal
     if(!inIframe){
-        try {
-            const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'aris_gartner_export.csv';
+        try{
+            const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+            const a=document.createElement('a');
+            a.href=URL.createObjectURL(blob);
+            a.download='aris_gartner_export.csv';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             return;
-        } catch(e){}
+        }catch(e){}
     }
 
-    // Si estamos en iframe (Looker) → mostrar modal con opciones
     showExportModal(csv);
 }
 
 function showExportModal(csv){
-    // Remover modal anterior si existe
-    const prev = document.getElementById('exportModalOverlay');
-    if(prev) prev.remove();
+    const prev=document.getElementById('exportModalOverlay');
+    if(prev)prev.remove();
 
-    const overlay = document.createElement('div');
-    overlay.id = 'exportModalOverlay';
-    overlay.className = 'export-modal-overlay';
-    overlay.innerHTML = `
+    const overlay=document.createElement('div');
+    overlay.id='exportModalOverlay';
+    overlay.className='export-modal-overlay';
+    overlay.innerHTML=`
         <div class="export-modal">
             <h3> Exportar Datos CSV</h3>
             <p class="subtitle">${data.length} ARIs · Selecciona todo con Ctrl+A y copia con Ctrl+C, o usa los botones:</p>
@@ -520,58 +565,39 @@ function showExportModal(csv){
         </div>`;
     document.body.appendChild(overlay);
 
-    // Click fuera del modal para cerrar
-    overlay.addEventListener('click', function(e){
-        if(e.target === overlay) closeExportModal();
+    overlay.addEventListener('click',function(e){
+        if(e.target===overlay)closeExportModal();
     });
 
-    // Seleccionar texto automáticamente
-    setTimeout(()=>{
-        document.getElementById('csvTextArea').select();
-    }, 100);
+    setTimeout(()=>{document.getElementById('csvTextArea').select();},100);
 }
 
 function copyCSVtoClipboard(){
-    const textarea = document.getElementById('csvTextArea');
-    const csv = textarea.value;
+    const textarea=document.getElementById('csvTextArea');
+    const csv=textarea.value;
 
-    // Intentar API moderna de clipboard
-    if(navigator.clipboard && navigator.clipboard.writeText){
-        navigator.clipboard.writeText(csv).then(()=>{
-            showCopySuccess();
-        }).catch(()=>{
-            fallbackCopy(textarea);
-        });
-    } else {
-        fallbackCopy(textarea);
-    }
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(csv).then(()=>{showCopySuccess();}).catch(()=>{fallbackCopy(textarea);});
+    }else{fallbackCopy(textarea);}
 }
 
 function fallbackCopy(textarea){
     textarea.select();
-    textarea.setSelectionRange(0, textarea.value.length);
-    try {
-        document.execCommand('copy');
-        showCopySuccess();
-    } catch(e){
-        alert('No se pudo copiar automáticamente.\nUsa Ctrl+A y luego Ctrl+C manualmente.');
-    }
+    textarea.setSelectionRange(0,textarea.value.length);
+    try{document.execCommand('copy');showCopySuccess();}
+    catch(e){alert('No se pudo copiar automáticamente.\nUsa Ctrl+A y luego Ctrl+C manualmente.');}
 }
 
 function showCopySuccess(){
-    const msg = document.getElementById('copySuccess');
-    msg.style.display = 'block';
-    setTimeout(()=>{ msg.style.display = 'none'; }, 4000);
+    const msg=document.getElementById('copySuccess');
+    msg.style.display='block';
+    setTimeout(()=>{msg.style.display='none';},4000);
 }
 
 function tryDirectDownload(){
-    let csv='ID,Acción,Aplicativo,Impacto,Esfuerzo,Estado,Cuadrante\n';
-    data.forEach(d=>{
-        csv+=`"${d.ID}","${d.Acción}","${d.Aplicativo}","${impLabels[d.impacto_n]}","${esfLabels[d.esfuerzo_n]}","${d.Estado}","${getQuad(d)}"\n`;
-    });
+    const csv=buildCSV();
 
-    // Crear HTML que se auto-descarga al abrir
-    const htmlContent = `
+    const htmlContent=`
     <!DOCTYPE html>
     <html>
     <head>
@@ -596,45 +622,35 @@ function tryDirectDownload(){
         </div>
         <script>
             (function(){
-                var csv = decodeURIComponent("${encodeURIComponent('\uFEFF' + csv)}");
-                var blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
-                var a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = 'aris_gartner_export.csv';
+                var csv=decodeURIComponent("${encodeURIComponent('\uFEFF'+csv)}");
+                var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+                var a=document.createElement('a');
+                a.href=URL.createObjectURL(blob);
+                a.download='aris_gartner_export.csv';
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 setTimeout(function(){
                     document.getElementById('sp').style.display='none';
                     document.getElementById('ok').style.display='block';
-                }, 1000);
+                },1000);
             })();
         <\/script>
     </body>
     </html>`;
 
-    try {
-        const blob = new Blob([htmlContent], {type:'text/html;charset=utf-8'});
-        const url = URL.createObjectURL(blob);
-        const w = window.open(url, '_blank');
-        if(!w){
-            // Fallback si popup bloqueado
-            const a = document.createElement('a');
-            a.href = url;
-            a.target = '_blank';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
-        setTimeout(()=>URL.revokeObjectURL(url), 10000);
-    } catch(e){
-        alert('Descarga bloqueada.\nUsa el botón "Copiar al Portapapeles" y pega en Excel.');
-    }
+    try{
+        const blob=new Blob([htmlContent],{type:'text/html;charset=utf-8'});
+        const url=URL.createObjectURL(blob);
+        const w=window.open(url,'_blank');
+        if(!w){const a=document.createElement('a');a.href=url;a.target='_blank';document.body.appendChild(a);a.click();document.body.removeChild(a);}
+        setTimeout(()=>URL.revokeObjectURL(url),10000);
+    }catch(e){alert('Descarga bloqueada.\nUsa el botón "Copiar al Portapapeles" y pega en Excel.');}
 }
 
 function closeExportModal(){
-    const overlay = document.getElementById('exportModalOverlay');
-    if(overlay) overlay.remove();
+    const overlay=document.getElementById('exportModalOverlay');
+    if(overlay)overlay.remove();
 }
 
 let ctxTarget=null;
@@ -809,7 +825,7 @@ function drawChart(){
     nodes.on('mouseover',function(e,d){
         const eCls=getEstadoCls(d.Estado);
         tip.style('display','block')
-            .html(`<b style="font-size:14px">${d.ID}</b> <span class="estado-tag estado-${eCls}">${d.Estado}</span><br><span class="app-tag">${d.Aplicativo}</span><br><br>${d.Acción}<br><br><b>Impacto:</b> ${d.Impacto} · <b>Esfuerzo:</b> ${d.Esfuerzo}<br><span style="color:#999;font-size:10px"> Arrastra · Click derecho = cambiar estado</span>`);
+            .html(`<b style="font-size:14px">${d.ID}</b> <span class="estado-tag estado-${eCls}">${d.Estado}</span><br>${d.Aplicativo}<br><br>${d.Acción}<br><br><b>Impacto:</b> ${d.Impacto} · <b>Esfuerzo:</b> ${d.Esfuerzo}<br><b>Tipo:</b> ${d.Tipo}<br><span style="color:#999;font-size:10px"> Arrastra · Click derecho = cambiar estado</span>`);
         d3.select(this).select('circle.node-fill').transition().duration(150).attr('r',R+4);
     })
     .on('mousemove',(e)=>{tip.style('left',(e.pageX+15)+'px').style('top',(e.pageY-10)+'px');})
