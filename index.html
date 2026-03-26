@@ -88,7 +88,6 @@
     .toggle-slider:before{content:"";position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
     .toggle-switch input:checked + .toggle-slider{background:#ef6c00}
     .toggle-switch input:checked + .toggle-slider:before{transform:translateX(22px)}
-
     .export-modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s}
     .export-modal{background:white;border-radius:14px;padding:28px;max-width:650px;width:92%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.4);animation:slideUp .3s}
     .export-modal h3{margin-bottom:6px;font-size:18px;color:#333}
@@ -401,13 +400,11 @@ function buildDashboard(){
     document.getElementById('uploadScreen').style.display='none';
     document.getElementById('dashboard').style.display='block';
 
-    // Poblar filtro Aplicativo
     const apps=[...new Set(data.map(d=>d.Aplicativo))].sort();
     const selApp=document.getElementById('fAplicativo');
     selApp.innerHTML='<option value="">Aplicativo: Todos</option>';
     apps.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;selApp.appendChild(o);});
 
-    // Poblar filtro Tipo
     const tipos=[...new Set(data.map(d=>d.Tipo))].sort();
     const selTipo=document.getElementById('fTipo');
     selTipo.innerHTML='<option value="">Tipo: Todos</option>';
@@ -516,6 +513,17 @@ function resetAll(){
     drawChart();
 }
 
+/* ══════════════════════════════════════════════════════════
+   EXPORT — Nombre: Listado_ARIs_DD-MM-YYYY.csv
+   ══════════════════════════════════════════════════════════ */
+function getExportFilename(){
+    const now=new Date();
+    const dd=String(now.getDate()).padStart(2,'0');
+    const mm=String(now.getMonth()+1).padStart(2,'0');
+    const yyyy=now.getFullYear();
+    return `Listado_ARIs_${dd}-${mm}-${yyyy}.csv`;
+}
+
 function buildCSV(){
     let csv='ID,Acción,Aplicativo,Impacto,Esfuerzo,Estado,Tipo,Cuadrante\n';
     data.forEach(d=>{
@@ -533,7 +541,7 @@ function exportCSV(){
             const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
             const a=document.createElement('a');
             a.href=URL.createObjectURL(blob);
-            a.download='aris_gartner_export.csv';
+            a.download=getExportFilename();
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -554,7 +562,7 @@ function showExportModal(csv){
     overlay.innerHTML=`
         <div class="export-modal">
             <h3> Exportar Datos CSV</h3>
-            <p class="subtitle">${data.length} ARIs · Selecciona todo con Ctrl+A y copia con Ctrl+C, o usa los botones:</p>
+            <p class="subtitle">${data.length} ARIs · <b>${getExportFilename()}</b></p>
             <textarea id="csvTextArea" readonly>${csv}</textarea>
             <div class="copy-success" id="copySuccess"> ¡Copiado al portapapeles! Pega en Excel con Ctrl+V</div>
             <div class="btn-row">
@@ -596,6 +604,7 @@ function showCopySuccess(){
 
 function tryDirectDownload(){
     const csv=buildCSV();
+    const filename=getExportFilename();
 
     const htmlContent=`
     <!DOCTYPE html>
@@ -626,7 +635,7 @@ function tryDirectDownload(){
                 var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
                 var a=document.createElement('a');
                 a.href=URL.createObjectURL(blob);
-                a.download='aris_gartner_export.csv';
+                a.download='${filename}';
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -847,4 +856,4 @@ function drawChart(){
 }
 </script>
 </body>
-</html>
+</html> 
