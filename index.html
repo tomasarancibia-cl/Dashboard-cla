@@ -16,7 +16,7 @@
     .panel{background:white;border-radius:10px;border:1px solid #ddd;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
     .panel-chart{flex:4;min-width:780px;overflow:hidden}
     .panel-chart svg{width:100%;height:auto;display:block}
-    .panel-side{flex:1;min-width:400px;display:flex;flex-direction:column;overflow:hidden;max-height:780px}
+    .panel-side{flex:1;min-width:420px;display:flex;flex-direction:column;overflow:hidden;max-height:780px}
     .panel-side .filters{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
     .panel-side .filters input,.panel-side .filters select{width:100%;padding:6px 8px;border:1px solid #ccc;border-radius:6px;font-size:11px}
     .panel-side .filters .row{display:flex;gap:4px}
@@ -34,6 +34,7 @@
     tr:hover{background:#e8f0fe}
     .app-tag{display:inline-block;background:#e8e8e8;color:#555;padding:1px 6px;border-radius:4px;font-size:9px;margin-top:2px}
     .tipo-tag{display:inline-block;background:#e1bee7;color:#6a1b9a;padding:1px 6px;border-radius:4px;font-size:9px;margin-top:2px}
+    .ambiente-tag{display:inline-block;background:#b3e5fc;color:#01579b;padding:1px 6px;border-radius:4px;font-size:9px;margin-top:2px}
     .btn{padding:8px 18px;border-radius:6px;border:1px solid #aaa;background:#fff;cursor:pointer;font-weight:bold;font-size:12px;transition:background .2s}
     .btn:hover{background:#f0f0f0}
     #uploadScreen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;text-align:center}
@@ -134,6 +135,7 @@
         <div class="map-row"><label>Aplicativo:</label><select id="mapAplicativo"></select></div>
         <div class="map-row"><label>Estado:</label><select id="mapEstado"></select></div>
         <div class="map-row"><label>Tipo:</label><select id="mapTipo"></select></div>
+        <div class="map-row"><label>Ambiente:</label><select id="mapAmbiente"></select></div>
         <div style="margin-top:10px"><b>Vista previa (primeras 5 filas):</b><div class="preview-box" id="previewBox"></div></div>
         <div id="errorMsg"></div>
         <button onclick="buildDashboard()">Generar Mapa Interactivo</button>
@@ -157,9 +159,9 @@
             </div>
             <div class="estado-legend" id="legendHeatmap" style="display:none">
                 <span style="font-weight:bold">Intensidad:</span>
-                <div class="legend-item"><div class="legend-dot" style="background:#b71c1c"></div><span>Bajo impacto / Alto esfuerzo</span></div>
-                <div class="legend-item"><div class="legend-dot" style="background:#f9a825"></div><span>Intermedio</span></div>
                 <div class="legend-item"><div class="legend-dot" style="background:#1b5e20"></div><span>Alto impacto / Bajo esfuerzo</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#f9a825"></div><span>Intermedio</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#b71c1c"></div><span>Bajo impacto / Alto esfuerzo</span></div>
             </div>
             <div class="toggle-controls">
                 <span class="toggle-mode-label active-estado" id="lblEstado"> Modo Estados</span>
@@ -197,6 +199,7 @@
                 </div>
                 <div class="row">
                     <select id="fTipo"><option value="">Tipo: Todos</option></select>
+                    <select id="fAmbiente"><option value="">Ambiente: Todos</option></select>
                 </div>
                 <div style="display:flex;align-items:center;justify-content:space-between">
                     <div class="filter-count" id="filterCount"></div>
@@ -207,7 +210,7 @@
                 </div>
             </div>
             <div class="table-wrap">
-                <table id="tbl"><tr><th>ID</th><th>Acción</th><th>Aplicativo</th><th>Imp.</th><th>Esf.</th><th>Estado</th><th>Tipo</th></tr></table>
+                <table id="tbl"><tr><th>ID</th><th>Acción</th><th>Aplicativo</th><th>Imp.</th><th>Esf.</th><th>Estado</th><th>Tipo</th><th>Ambiente</th></tr></table>
             </div>
         </div>
     </div>
@@ -232,6 +235,19 @@
 let workbook=null,sheetData=[],headers=[],data=[];
 const IMPACT_MAP={'bajo':0,'medio':1,'alto':2,'crítico':3,'critico':3,'critical':3,'high':2,'medium':1,'low':0};
 const EFFORT_MAP={'bajo':0,'medio':1,'alto':2,'high':2,'medium':1,'low':0};
+
+/* ── Column mapping definitions ── */
+const colDefs=[
+    {id:'mapID',kw:['id','ari','#','num','número','codigo'],required:true},
+    {id:'mapAccion',kw:['acción','accion','action','descripción','descripcion'],required:true},
+    {id:'mapImpacto',kw:['impacto','impact','severity'],required:true},
+    {id:'mapEsfuerzo',kw:['esfuerzo','effort','complejidad'],required:true},
+    {id:'mapAplicativo',kw:['aplicativo','app','sistema','componente','módulo'],required:false},
+    {id:'mapEstado',kw:['estado','status','state','etapa','fase'],required:false},
+    {id:'mapTipo',kw:['tipo','type','categoría','categoria','category','clase'],required:false},
+    {id:'mapAmbiente',kw:['ambiente','environment','env','entorno','plataforma'],required:false}
+];
+
 const dropZone=document.getElementById('dropZone'),fileInput=document.getElementById('fileInput');
 dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('dragover');});
 dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('dragover'));
@@ -263,18 +279,24 @@ function loadSheet(name){
     sheetData=json;headers=Object.keys(json[0]);
     document.getElementById('sheetSelector').style.display='none';
     showColumnMapper();
+    tryAutoBuild();
+}
+
+/* ── Auto-detect: si las 4 columnas obligatorias matchean, salta directo ── */
+function tryAutoBuild(){
+    const requiredIds=['mapID','mapAccion','mapImpacto','mapEsfuerzo'];
+    const allFound=requiredIds.every(id=>{
+        const sel=document.getElementById(id);
+        return sel&&sel.value&&sel.value!=='';
+    });
+    if(allFound){
+        buildDashboard();
+    }
 }
 
 function showColumnMapper(){
     document.getElementById('colMapper').style.display='block';
-    [{id:'mapID',kw:['id','ari','#','num','número','codigo']},
-     {id:'mapAccion',kw:['acción','accion','action','descripción','descripcion']},
-     {id:'mapImpacto',kw:['impacto','impact','severity']},
-     {id:'mapEsfuerzo',kw:['esfuerzo','effort','complejidad']},
-     {id:'mapAplicativo',kw:['aplicativo','app','sistema','componente','módulo']},
-     {id:'mapEstado',kw:['estado','status','state','etapa','fase']},
-     {id:'mapTipo',kw:['tipo','type','categoría','categoria','category','clase']}
-    ].forEach(f=>{
+    colDefs.forEach(f=>{
         const sel=document.getElementById(f.id);
         sel.innerHTML='<option value="">(no asignar)</option>';
         headers.forEach(h=>{
@@ -311,14 +333,9 @@ function getQuad(d){
 const impLabels=["Bajo","Medio","Alto","Crítico"],esfLabels=["Bajo","Medio","Alto","—"];
 
 const estadoFillColors={
-    'descartada':  '#c62828',
-    'backlog':     '#ef6c00',
-    'desarrollo':  '#f9a825',
-    'entregada':   '#7cb342',
-    'coordinacion':'#43a047',
-    'testeo':      '#2e7d32',
-    'implementada':'#1b5e20',
-    'homologacion':'#00695c'
+    'descartada':'#c62828','backlog':'#ef6c00','desarrollo':'#f9a825',
+    'entregada':'#7cb342','coordinacion':'#43a047','testeo':'#2e7d32',
+    'implementada':'#1b5e20','homologacion':'#00695c'
 };
 
 function getEstadoCls(est){
@@ -335,16 +352,23 @@ function getEstadoCls(est){
 
 function getEstadoFillColor(d){return estadoFillColors[getEstadoCls(d.Estado)]||'#ef6c00';}
 
+/* ══════════════════════════════════════════════════════════
+   HEATMAP — heatBgColors[impacto_n][esfuerzo_n]
+   X: Bajo(izq) → Alto(der)   Y: Crítico(abajo) → Bajo(arriba)
+   Verde = alto impacto + bajo esfuerzo
+   Rojo  = bajo impacto + alto esfuerzo
+   ══════════════════════════════════════════════════════════ */
 const heatBgColors=[
-    ['#b71c1c','#d84315','#ef6c00'],
-    ['#d84315','#f9a825','#7cb342'],
-    ['#ef6c00','#7cb342','#2e7d32'],
-    ['#e65100','#43a047','#1b5e20']
+    ['#f9a825','#d84315','#b71c1c'],
+    ['#7cb342','#f9a825','#d84315'],
+    ['#2e7d32','#7cb342','#ef6c00'],
+    ['#1b5e20','#43a047','#e65100']
 ];
+
 function getHeatmapNodeColor(d){
     const impIdx=Math.max(0,Math.min(3,d.impacto_n));
-    const colIdx=2-Math.max(0,Math.min(2,d.esfuerzo_n));
-    return heatBgColors[impIdx][colIdx];
+    const esfIdx=Math.max(0,Math.min(2,d.esfuerzo_n));
+    return heatBgColors[impIdx][esfIdx];
 }
 
 function isHeatmapMode(){return document.getElementById('toggleMode').checked;}
@@ -382,7 +406,8 @@ function buildDashboard(){
           colEsf=document.getElementById('mapEsfuerzo').value,
           colApp=document.getElementById('mapAplicativo').value,
           colEst=document.getElementById('mapEstado').value,
-          colTipo=document.getElementById('mapTipo').value;
+          colTipo=document.getElementById('mapTipo').value,
+          colAmb=document.getElementById('mapAmbiente').value;
     if(!colID||!colAcc||!colImp||!colEsf){showError('Mapea al menos: ID, Acción, Impacto y Esfuerzo.');return;}
     data=[];let skipped=0;
     sheetData.forEach(row=>{
@@ -392,9 +417,10 @@ function buildDashboard(){
         const app=colApp?String(row[colApp]||'Sin asignar').trim():'Sin asignar';
         const est=colEst?String(row[colEst]||'Backlog').trim():'Backlog';
         const tipo=colTipo?String(row[colTipo]||'Sin tipo').trim():'Sin tipo';
+        const ambiente=colAmb?String(row[colAmb]||'Sin ambiente').trim():'Sin ambiente';
         const impN=parseLevel(impRaw,IMPACT_MAP),esfN=parseLevel(esfRaw,EFFORT_MAP);
         if(id===''||impN===null||esfN===null){skipped++;return;}
-        data.push({ID:id,Acción:acc,Impacto:impLabels[impN],Esfuerzo:esfLabels[esfN],impacto_n:impN,esfuerzo_n:esfN,Aplicativo:app,Estado:est,Tipo:tipo,orig_impacto_n:impN,orig_esfuerzo_n:esfN,orig_Estado:est});
+        data.push({ID:id,Acción:acc,Impacto:impLabels[impN],Esfuerzo:esfLabels[esfN],impacto_n:impN,esfuerzo_n:esfN,Aplicativo:app,Estado:est,Tipo:tipo,Ambiente:ambiente,orig_impacto_n:impN,orig_esfuerzo_n:esfN,orig_Estado:est});
     });
     if(!data.length){showError('No se pudieron parsear filas.');return;}
     document.getElementById('uploadScreen').style.display='none';
@@ -410,12 +436,18 @@ function buildDashboard(){
     selTipo.innerHTML='<option value="">Tipo: Todos</option>';
     tipos.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;selTipo.appendChild(o);});
 
+    const ambientes=[...new Set(data.map(d=>d.Ambiente))].sort();
+    const selAmb=document.getElementById('fAmbiente');
+    selAmb.innerHTML='<option value="">Ambiente: Todos</option>';
+    ambientes.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;selAmb.appendChild(o);});
+
     document.getElementById('search').addEventListener('input',updateTable);
     document.getElementById('fImpacto').addEventListener('change',updateTable);
     document.getElementById('fEsfuerzo').addEventListener('change',updateTable);
     document.getElementById('fAplicativo').addEventListener('change',updateTable);
     document.getElementById('fEstado').addEventListener('change',updateTable);
     document.getElementById('fTipo').addEventListener('change',updateTable);
+    document.getElementById('fAmbiente').addEventListener('change',updateTable);
     document.getElementById('toggleMode').addEventListener('change',applyVisualMode);
 
     updateTable();drawChart();
@@ -436,7 +468,8 @@ function getFilterState(){
         fEsf:document.getElementById('fEsfuerzo').value,
         fApp:document.getElementById('fAplicativo').value,
         fEst:document.getElementById('fEstado').value,
-        fTipo:document.getElementById('fTipo').value
+        fTipo:document.getElementById('fTipo').value,
+        fAmb:document.getElementById('fAmbiente').value
     };
 }
 
@@ -448,6 +481,7 @@ function matchesFilters(d,fs){
     if(fs.fApp&&d.Aplicativo!==fs.fApp)return false;
     if(fs.fEst&&!d.Estado.includes(fs.fEst))return false;
     if(fs.fTipo&&d.Tipo!==fs.fTipo)return false;
+    if(fs.fAmb&&d.Ambiente!==fs.fAmb)return false;
     return true;
 }
 
@@ -461,11 +495,11 @@ function updateTable(){
         count++;
         const eCls=getEstadoCls(d.Estado);
         const tr=document.createElement('tr');tr.className='dr';
-        tr.innerHTML=`<td><b>${d.ID}</b></td><td>${d.Acción}</td><td><span class="app-tag">${d.Aplicativo}</span></td><td>${d.Impacto}</td><td>${d.Esfuerzo}</td><td><span class="estado-tag estado-${eCls}">${d.Estado}</span></td><td><span class="tipo-tag">${d.Tipo}</span></td>`;
+        tr.innerHTML=`<td><b>${d.ID}</b></td><td>${d.Acción}</td><td><span class="app-tag">${d.Aplicativo}</span></td><td>${d.Impacto}</td><td>${d.Esfuerzo}</td><td><span class="estado-tag estado-${eCls}">${d.Estado}</span></td><td><span class="tipo-tag">${d.Tipo}</span></td><td><span class="ambiente-tag">${d.Ambiente}</span></td>`;
         tbl.appendChild(tr);
     });
     document.getElementById('filterCount').textContent=`Mostrando ${count} de ${data.length} ARIs`;
-    const hasFilter=fs.f||fs.fImp||fs.fEsf||fs.fApp||fs.fEst||fs.fTipo;
+    const hasFilter=fs.f||fs.fImp||fs.fEsf||fs.fApp||fs.fEst||fs.fTipo||fs.fAmb;
     document.getElementById('btnClearFilters').style.display=hasFilter?'inline-block':'none';
     updateChartVisibility();
 }
@@ -485,6 +519,7 @@ function clearFilters(){
     document.getElementById('fAplicativo').value='';
     document.getElementById('fEstado').value='';
     document.getElementById('fTipo').value='';
+    document.getElementById('fAmbiente').value='';
     updateTable();
 }
 
@@ -513,9 +548,6 @@ function resetAll(){
     drawChart();
 }
 
-/* ══════════════════════════════════════════════════════════
-   EXPORT — Nombre: Listado_ARIs_DD-MM-YYYY.csv
-   ══════════════════════════════════════════════════════════ */
 function getExportFilename(){
     const now=new Date();
     const dd=String(now.getDate()).padStart(2,'0');
@@ -525,9 +557,9 @@ function getExportFilename(){
 }
 
 function buildCSV(){
-    let csv='ID,Acción,Aplicativo,Impacto,Esfuerzo,Estado,Tipo,Cuadrante\n';
+    let csv='ID,Acción,Aplicativo,Impacto,Esfuerzo,Estado,Tipo,Ambiente,Cuadrante\n';
     data.forEach(d=>{
-        csv+=`"${d.ID}","${d.Acción}","${d.Aplicativo}","${impLabels[d.impacto_n]}","${esfLabels[d.esfuerzo_n]}","${d.Estado}","${d.Tipo}","${getQuad(d)}"\n`;
+        csv+=`"${d.ID}","${d.Acción}","${d.Aplicativo}","${impLabels[d.impacto_n]}","${esfLabels[d.esfuerzo_n]}","${d.Estado}","${d.Tipo}","${d.Ambiente}","${getQuad(d)}"\n`;
     });
     return csv;
 }
@@ -535,7 +567,6 @@ function buildCSV(){
 function exportCSV(){
     const csv=buildCSV();
     const inIframe=(window!==window.top);
-
     if(!inIframe){
         try{
             const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
@@ -548,14 +579,12 @@ function exportCSV(){
             return;
         }catch(e){}
     }
-
     showExportModal(csv);
 }
 
 function showExportModal(csv){
     const prev=document.getElementById('exportModalOverlay');
     if(prev)prev.remove();
-
     const overlay=document.createElement('div');
     overlay.id='exportModalOverlay';
     overlay.className='export-modal-overlay';
@@ -572,26 +601,20 @@ function showExportModal(csv){
             </div>
         </div>`;
     document.body.appendChild(overlay);
-
-    overlay.addEventListener('click',function(e){
-        if(e.target===overlay)closeExportModal();
-    });
-
+    overlay.addEventListener('click',function(e){if(e.target===overlay)closeExportModal();});
     setTimeout(()=>{document.getElementById('csvTextArea').select();},100);
 }
 
 function copyCSVtoClipboard(){
     const textarea=document.getElementById('csvTextArea');
     const csv=textarea.value;
-
     if(navigator.clipboard&&navigator.clipboard.writeText){
         navigator.clipboard.writeText(csv).then(()=>{showCopySuccess();}).catch(()=>{fallbackCopy(textarea);});
     }else{fallbackCopy(textarea);}
 }
 
 function fallbackCopy(textarea){
-    textarea.select();
-    textarea.setSelectionRange(0,textarea.value.length);
+    textarea.select();textarea.setSelectionRange(0,textarea.value.length);
     try{document.execCommand('copy');showCopySuccess();}
     catch(e){alert('No se pudo copiar automáticamente.\nUsa Ctrl+A y luego Ctrl+C manualmente.');}
 }
@@ -605,49 +628,7 @@ function showCopySuccess(){
 function tryDirectDownload(){
     const csv=buildCSV();
     const filename=getExportFilename();
-
-    const htmlContent=`
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>Descargando CSV...</title>
-        <style>
-            body{font-family:'Segoe UI',Arial,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f0f2f5;margin:0}
-            .box{text-align:center;background:white;padding:40px 60px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
-            .spinner{width:40px;height:40px;border:4px solid #eee;border-top:4px solid #1896d3;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px}
-            @keyframes spin{to{transform:rotate(360deg)}}
-            h2{color:#333;margin-bottom:8px}
-            p{color:#888;font-size:14px}
-            .success{color:#27ae60;font-weight:bold;display:none}
-        </style>
-    </head>
-    <body>
-        <div class="box">
-            <div class="spinner" id="sp"></div>
-            <h2> Descargando CSV...</h2>
-            <p>El archivo se descargará automáticamente.</p>
-            <p class="success" id="ok"> ¡Descarga completa! Puedes cerrar esta pestaña.</p>
-        </div>
-        <script>
-            (function(){
-                var csv=decodeURIComponent("${encodeURIComponent('\uFEFF'+csv)}");
-                var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
-                var a=document.createElement('a');
-                a.href=URL.createObjectURL(blob);
-                a.download='${filename}';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                setTimeout(function(){
-                    document.getElementById('sp').style.display='none';
-                    document.getElementById('ok').style.display='block';
-                },1000);
-            })();
-        <\/script>
-    </body>
-    </html>`;
-
+    const htmlContent=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Descargando CSV...</title><style>body{font-family:'Segoe UI',Arial,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f0f2f5;margin:0}.box{text-align:center;background:white;padding:40px 60px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}.spinner{width:40px;height:40px;border:4px solid #eee;border-top:4px solid #1896d3;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px}@keyframes spin{to{transform:rotate(360deg)}}h2{color:#333;margin-bottom:8px}p{color:#888;font-size:14px}.success{color:#27ae60;font-weight:bold;display:none}</style></head><body><div class="box"><div class="spinner" id="sp"></div><h2>Descargando CSV...</h2><p>El archivo se descargará automáticamente.</p><p class="success" id="ok">¡Descarga completa! Puedes cerrar esta pestaña.</p></div><script>(function(){var csv=decodeURIComponent("${encodeURIComponent('\uFEFF'+csv)}");var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='${filename}';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(function(){document.getElementById('sp').style.display='none';document.getElementById('ok').style.display='block';},1000);})();<\/script></body></html>`;
     try{
         const blob=new Blob([htmlContent],{type:'text/html;charset=utf-8'});
         const url=URL.createObjectURL(blob);
@@ -684,6 +665,11 @@ function setEstado(newEst){
     updateTable();
 }
 
+/* ══════════════════════════════════════════════════════════
+   DRAW CHART
+   X: Bajo(izq) → Alto(der)     domain [-0.6, 2.6]
+   Y: Crítico(abajo) → Bajo(arriba)  domain [3.6, -0.6]
+   ══════════════════════════════════════════════════════════ */
 function drawChart(){
     const container=document.querySelector('.panel-chart');
     const W=container.clientWidth-32,H=680;
@@ -697,14 +683,22 @@ function drawChart(){
         .style('width','100%').style('height','auto');
 
     const g=svg.append('g').attr('transform',`translate(${margin.left},${margin.top})`);
-    const xScale=d3.scaleLinear().domain([2.6,-0.6]).range([0,iW]);
-    const yScale=d3.scaleLinear().domain([-0.6,3.6]).range([iH,0]);
 
+    /* ── SCALES ──
+       X: esfuerzo 0(Bajo)=izq → 2(Alto)=der
+       Y: impacto 3(Crítico)=abajo → 0(Bajo)=arriba  (domain inverted so higher Y value = lower on screen)
+    */
+    const xScale=d3.scaleLinear().domain([-0.6,2.6]).range([0,iW]);
+    const yScale=d3.scaleLinear().domain([3.6,-0.6]).range([iH,0]);
+
+    /* ── HEATMAP CELLS ── */
     const heatCols=3,heatRows=4,cellW=iW/heatCols,cellH=iH/heatRows;
     for(let row=0;row<heatRows;row++){
         for(let col=0;col<heatCols;col++){
-            const impIdx=heatRows-1-row;
-            const color=heatBgColors[impIdx][col];
+            /* row 0 = top = Bajo (impacto 0), row 3 = bottom = Crítico (impacto 3) */
+            const impIdx=row;
+            const esfIdx=col;
+            const color=heatBgColors[impIdx][esfIdx];
             const isTop=row===0,isBot=row===heatRows-1,isLeft=col===0,isRight=col===heatCols-1;
             const rx=(isTop&&isLeft)||(isTop&&isRight)||(isBot&&isLeft)||(isBot&&isRight)?8:0;
             g.append('rect')
@@ -722,14 +716,23 @@ function drawChart(){
     for(let r=1;r<heatRows;r++)
         g.append('line').attr('x1',0).attr('x2',iW).attr('y1',r*cellH).attr('y2',r*cellH).attr('stroke','#aaa').attr('stroke-dasharray','6,4').attr('opacity',.4);
 
-    g.append('g').attr('transform',`translate(0,${iH})`).call(d3.axisBottom(xScale).tickValues([2,1,0]).tickFormat(v=>["Bajo","Medio","Alto"][v])).selectAll('text').style('font-size','12px').style('font-weight','bold');
-    g.append('g').call(d3.axisLeft(yScale).tickValues([0,1,2,3]).tickFormat((_,i)=>["Bajo","Medio","Alto","Crítico"][i])).selectAll('text').style('font-size','12px').style('font-weight','bold');
+    /* ── AXES ──
+       X bottom: Bajo → Medio → Alto (izq a der)
+       Y left: Bajo(arriba) → Medio → Alto → Crítico(abajo)
+    */
+    g.append('g').attr('transform',`translate(0,${iH})`)
+        .call(d3.axisBottom(xScale).tickValues([0,1,2]).tickFormat(v=>["Bajo","Medio","Alto"][v]))
+        .selectAll('text').style('font-size','12px').style('font-weight','bold');
+
+    g.append('g')
+        .call(d3.axisLeft(yScale).tickValues([0,1,2,3]).tickFormat(v=>["Bajo","Medio","Alto","Crítico"][v]))
+        .selectAll('text').style('font-size','12px').style('font-weight','bold');
 
     [0,1,2].forEach(v=>{g.append('line').attr('x1',xScale(v)).attr('x2',xScale(v)).attr('y1',0).attr('y2',iH).attr('stroke','#ddd').attr('stroke-width',.5);});
     [0,1,2,3].forEach(v=>{g.append('line').attr('x1',0).attr('x2',iW).attr('y1',yScale(v)).attr('y2',yScale(v)).attr('stroke','#ddd').attr('stroke-width',.5);});
 
-    svg.append('text').attr('x',W/2).attr('y',H-6).attr('text-anchor','middle').style('font-size','13px').style('font-weight','bold').style('fill','#555').text('← Esfuerzo');
-    svg.append('text').attr('transform','rotate(-90)').attr('x',-H/2).attr('y',16).attr('text-anchor','middle').style('font-size','13px').style('font-weight','bold').style('fill','#555').text('Impacto →');
+    svg.append('text').attr('x',W/2).attr('y',H-6).attr('text-anchor','middle').style('font-size','13px').style('font-weight','bold').style('fill','#555').text('Esfuerzo →');
+    svg.append('text').attr('transform','rotate(-90)').attr('x',-H/2).attr('y',16).attr('text-anchor','middle').style('font-size','13px').style('font-weight','bold').style('fill','#555').text('← Impacto');
 
     const R=13;
     data.forEach(d=>{
@@ -769,12 +772,13 @@ function drawChart(){
             const nx=Math.max(0,Math.min(iW,p.x)),ny=Math.max(0,Math.min(iH,p.y));
             d.x=nx;d.y=ny;
             d3.select(this).attr('transform',`translate(${nx},${ny})`);
-            const sI=snap(yScale.invert(ny),3),sE=snap(xScale.invert(nx),2);
+            const sE=snap(xScale.invert(nx),2);
+            const sI=snap(yScale.invert(ny),3);
 
             if(isHeatmapMode()){
                 const tempImp=Math.max(0,Math.min(3,sI));
-                const tempColIdx=2-Math.max(0,Math.min(2,sE));
-                const dragColor=heatBgColors[tempImp][tempColIdx];
+                const tempEsf=Math.max(0,Math.min(2,sE));
+                const dragColor=heatBgColors[tempImp][tempEsf];
                 d3.select(this).select('circle.node-fill').style('fill',dragColor);
             }
 
@@ -834,7 +838,7 @@ function drawChart(){
     nodes.on('mouseover',function(e,d){
         const eCls=getEstadoCls(d.Estado);
         tip.style('display','block')
-            .html(`<b style="font-size:14px">${d.ID}</b> <span class="estado-tag estado-${eCls}">${d.Estado}</span><br>${d.Aplicativo}<br><br>${d.Acción}<br><br><b>Impacto:</b> ${d.Impacto} · <b>Esfuerzo:</b> ${d.Esfuerzo}<br><b>Tipo:</b> ${d.Tipo}<br><span style="color:#999;font-size:10px"> Arrastra · Click derecho = cambiar estado</span>`);
+            .html(`<b style="font-size:14px">${d.ID}</b> <span class="estado-tag estado-${eCls}">${d.Estado}</span><br>${d.Aplicativo}<br><br>${d.Acción}<br><br><b>Impacto:</b> ${d.Impacto} · <b>Esfuerzo:</b> ${d.Esfuerzo}<br><b>Tipo:</b> ${d.Tipo} · <b>Ambiente:</b> <span class="ambiente-tag">${d.Ambiente}</span><br><span style="color:#999;font-size:10px"> Arrastra · Click derecho = cambiar estado</span>`);
         d3.select(this).select('circle.node-fill').transition().duration(150).attr('r',R+4);
     })
     .on('mousemove',(e)=>{tip.style('left',(e.pageX+15)+'px').style('top',(e.pageY-10)+'px');})
@@ -856,4 +860,4 @@ function drawChart(){
 }
 </script>
 </body>
-</html> 
+</html>
