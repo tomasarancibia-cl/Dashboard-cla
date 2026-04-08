@@ -65,12 +65,14 @@
     .filter-count{font-size:11px;color:#888;padding:2px 0}
     .estado-tag{display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:bold;color:white}
     .estado-descartada{background:#c62828}
+    .estado-desestimada{background:#e69200}
     .estado-backlog{background:#ef6c00}
     .estado-desarrollo{background:#f9a825;color:#333}
     .estado-entregada{background:#7cb342}
-    .estado-coordinacion{background:#43a047}
+    .estado-coordinacion{background:#9bd422}
     .estado-testeo{background:#2e7d32}
     .estado-implementada{background:#1b5e20}
+    .estado-implementadaqa{background:#388e3c}
     .estado-homologacion{background:#00695c}
     .ctx-menu{position:absolute;background:white;border:1px solid #ccc;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.2);z-index:1000;padding:6px 0;display:none;min-width:220px}
     .ctx-menu div{padding:8px 16px;cursor:pointer;font-size:12px;font-weight:bold;transition:background .15s}
@@ -149,12 +151,14 @@
             <div class="estado-legend" id="legendEstado">
                 <span style="font-weight:bold">Estado:</span>
                 <div class="legend-item"><div class="legend-dot" style="background:#c62828"></div><span>Descartada</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#e69200"></div><span>Desestimada</span></div>
                 <div class="legend-item"><div class="legend-dot" style="background:#ef6c00"></div><span>Backlog</span></div>
                 <div class="legend-item"><div class="legend-dot" style="background:#f9a825"></div><span>Desarrollo</span></div>
                 <div class="legend-item"><div class="legend-dot" style="background:#7cb342"></div><span>Entregada</span></div>
-                <div class="legend-item"><div class="legend-dot" style="background:#43a047"></div><span>Coordinación CLA</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#9bd422"></div><span>Coordinación CLA</span></div>
                 <div class="legend-item"><div class="legend-dot" style="background:#2e7d32"></div><span>Testeo QA</span></div>
                 <div class="legend-item"><div class="legend-dot" style="background:#1b5e20"></div><span>Implementada</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#388e3c"></div><span>Implementada QA</span></div>
                 <div class="legend-item"><div class="legend-dot" style="background:#00695c;border-style:dashed"></div><span>Homologación Prod CLA</span></div>
             </div>
             <div class="estado-legend" id="legendHeatmap" style="display:none">
@@ -188,12 +192,14 @@
                     <select id="fEstado">
                         <option value="">Estado: Todos</option>
                         <option>Descartada</option>
+                        <option>Desestimada</option>
                         <option>Backlog</option>
                         <option>Desarrollo</option>
                         <option>Entregada</option>
                         <option>Coordinación CLA</option>
                         <option>Testeo QA</option>
                         <option>Implementada</option>
+                        <option>Implementada QA</option>
                         <option>Homologación Prod CLA</option>
                     </select>
                 </div>
@@ -218,12 +224,14 @@
     <div class="ctx-menu" id="ctxMenu">
         <div class="ctx-title">Cambiar estado:</div>
         <div onclick="setEstado('Descartada')" style="color:#c62828">🔴 Descartada</div>
+        <div onclick="setEstado('Desestimada')" style="color:#e69200">🟡 Desestimada</div>
         <div onclick="setEstado('Backlog')">🟠 Backlog</div>
         <div onclick="setEstado('Desarrollo')">🟡 Desarrollo</div>
         <div onclick="setEstado('Entregada')">🟢 Entregada</div>
-        <div onclick="setEstado('Coordinación CLA')">🟢 Coordinación CLA</div>
+        <div onclick="setEstado('Coordinación CLA')" style="color:#9bd422">🟢 Coordinación CLA</div>
         <div onclick="setEstado('Testeo QA')">🟢 Testeo QA</div>
         <div onclick="setEstado('Implementada')">🟢 Implementada</div>
+        <div onclick="setEstado('Implementada QA')">✅ Implementada QA</div>
         <div class="ctx-separator">── Opcional ──</div>
         <div onclick="setEstado('Homologación Prod CLA')">🔷 Homologación Prod CLA</div>
     </div>
@@ -236,7 +244,6 @@ let workbook=null,sheetData=[],headers=[],data=[];
 const IMPACT_MAP={'bajo':0,'medio':1,'alto':2,'crítico':3,'critico':3,'critical':3,'high':2,'medium':1,'low':0};
 const EFFORT_MAP={'bajo':0,'medio':1,'alto':2,'high':2,'medium':1,'low':0};
 
-/* ── Column mapping definitions ── */
 const colDefs=[
     {id:'mapID',kw:['id','ari','#','num','número','codigo'],required:true},
     {id:'mapAccion',kw:['acción','accion','action','descripción','descripcion'],required:true},
@@ -282,16 +289,13 @@ function loadSheet(name){
     tryAutoBuild();
 }
 
-/* ── Auto-detect: si las 4 columnas obligatorias matchean, salta directo ── */
 function tryAutoBuild(){
     const requiredIds=['mapID','mapAccion','mapImpacto','mapEsfuerzo'];
     const allFound=requiredIds.every(id=>{
         const sel=document.getElementById(id);
         return sel&&sel.value&&sel.value!=='';
     });
-    if(allFound){
-        buildDashboard();
-    }
+    if(allFound) buildDashboard();
 }
 
 function showColumnMapper(){
@@ -333,15 +337,24 @@ function getQuad(d){
 const impLabels=["Bajo","Medio","Alto","Crítico"],esfLabels=["Bajo","Medio","Alto","—"];
 
 const estadoFillColors={
-    'descartada':'#c62828','backlog':'#ef6c00','desarrollo':'#f9a825',
-    'entregada':'#7cb342','coordinacion':'#43a047','testeo':'#2e7d32',
-    'implementada':'#1b5e20','homologacion':'#00695c'
+    'descartada':'#c62828',
+    'desestimada':'#e69200',
+    'backlog':'#ef6c00',
+    'desarrollo':'#f9a825',
+    'entregada':'#7cb342',
+    'coordinacion':'#9bd422',
+    'testeo':'#2e7d32',
+    'implementada':'#1b5e20',
+    'implementadaqa':'#388e3c',
+    'homologacion':'#00695c'
 };
 
 function getEstadoCls(est){
     const l=est.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
     if(l.includes('descartada')||l.includes('descartado'))return 'descartada';
+    if(l.includes('desestimada')||l.includes('desestimado'))return 'desestimada';
     if(l.includes('homologacion'))return 'homologacion';
+    if(l.includes('implementada qa')||l.includes('implementado qa'))return 'implementadaqa';
     if(l.includes('implementada')||l.includes('implementado'))return 'implementada';
     if(l.includes('testeo'))return 'testeo';
     if(l.includes('coordinacion'))return 'coordinacion';
@@ -352,12 +365,6 @@ function getEstadoCls(est){
 
 function getEstadoFillColor(d){return estadoFillColors[getEstadoCls(d.Estado)]||'#ef6c00';}
 
-/* ══════════════════════════════════════════════════════════
-   HEATMAP — heatBgColors[impacto_n][esfuerzo_n]
-   X: Bajo(izq) → Alto(der)   Y: Crítico(abajo) → Bajo(arriba)
-   Verde = alto impacto + bajo esfuerzo
-   Rojo  = bajo impacto + alto esfuerzo
-   ══════════════════════════════════════════════════════════ */
 const heatBgColors=[
     ['#f9a825','#d84315','#b71c1c'],
     ['#7cb342','#f9a825','#d84315'],
@@ -665,11 +672,6 @@ function setEstado(newEst){
     updateTable();
 }
 
-/* ══════════════════════════════════════════════════════════
-   DRAW CHART
-   X: Bajo(izq) → Alto(der)     domain [-0.6, 2.6]
-   Y: Crítico(abajo) → Bajo(arriba)  domain [3.6, -0.6]
-   ══════════════════════════════════════════════════════════ */
 function drawChart(){
     const container=document.querySelector('.panel-chart');
     const W=container.clientWidth-32,H=680;
@@ -684,20 +686,13 @@ function drawChart(){
 
     const g=svg.append('g').attr('transform',`translate(${margin.left},${margin.top})`);
 
-    /* ── SCALES ──
-       X: esfuerzo 0(Bajo)=izq → 2(Alto)=der
-       Y: impacto 3(Crítico)=abajo → 0(Bajo)=arriba  (domain inverted so higher Y value = lower on screen)
-    */
     const xScale=d3.scaleLinear().domain([-0.6,2.6]).range([0,iW]);
     const yScale=d3.scaleLinear().domain([3.6,-0.6]).range([iH,0]);
 
-    /* ── HEATMAP CELLS ── */
     const heatCols=3,heatRows=4,cellW=iW/heatCols,cellH=iH/heatRows;
     for(let row=0;row<heatRows;row++){
         for(let col=0;col<heatCols;col++){
-            /* row 0 = top = Bajo (impacto 0), row 3 = bottom = Crítico (impacto 3) */
-            const impIdx=row;
-            const esfIdx=col;
+            const impIdx=row,esfIdx=col;
             const color=heatBgColors[impIdx][esfIdx];
             const isTop=row===0,isBot=row===heatRows-1,isLeft=col===0,isRight=col===heatCols-1;
             const rx=(isTop&&isLeft)||(isTop&&isRight)||(isBot&&isLeft)||(isBot&&isRight)?8:0;
@@ -716,10 +711,6 @@ function drawChart(){
     for(let r=1;r<heatRows;r++)
         g.append('line').attr('x1',0).attr('x2',iW).attr('y1',r*cellH).attr('y2',r*cellH).attr('stroke','#aaa').attr('stroke-dasharray','6,4').attr('opacity',.4);
 
-    /* ── AXES ──
-       X bottom: Bajo → Medio → Alto (izq a der)
-       Y left: Bajo(arriba) → Medio → Alto → Crítico(abajo)
-    */
     g.append('g').attr('transform',`translate(0,${iH})`)
         .call(d3.axisBottom(xScale).tickValues([0,1,2]).tickFormat(v=>["Bajo","Medio","Alto"][v]))
         .selectAll('text').style('font-size','12px').style('font-weight','bold');
